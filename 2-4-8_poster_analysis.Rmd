@@ -1,0 +1,24 @@
+---
+title: "Analysis for the 2-4-8 2017 CSM poster"
+output: html_notebook
+---
+
+## Steps of the analysis
+
+0. Reshape data to wide format
+
+1. Normalize data with cumSum normalization
+
+2. Removal of housekeeping genes (AMR) and PhiX (Kraken)
+
+3. Construction of rarefaction curves
+
+    * Plot with `ggplot2`
+  
+  |Sample|Sampling Size|No. of OTUs|
+  |------|-------------|-----------|
+  
+
+4. Processing with Steven's scripts
+
+5. 
