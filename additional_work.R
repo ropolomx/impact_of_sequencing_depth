@@ -1,9 +1,145 @@
 library(dplyr)
 library(vegan)
-amr_results_class <- amr_results %>% group_by(Sample, Class) %>% summarise(Hits=sum(Hits_Seen))
+amrResultsClass <- amrResults %>% group_by(Sample, Class) %>% summarise(Hits=sum(Hits_Seen))
+
+amrResultsClass$Depth <- str_replace(amrResultsClass$Sample, "\\d+_","")
+amrResultsClass$Depth <- str_replace(amrResultsClass$Depth, "\\d$","")
+amrResultsClass$Depth <- str_replace(amrResultsClass$Depth, "full", "D1")
+amrResultsClass$Depth <- str_replace(amrResultsClass$Depth, "half", "D0.5")
+amrResultsClass$Depth <- str_replace(amrResultsClass$Depth, "quar*", "D0.25")
 
 
-amr_results <- read.csv('AMR/amr_new_dataframe_ROP.csv')
+
+krakenPhylumMean <- kraken %>% filter(Level.of.Classification == "P") %>% group_by(Type, Name) %>% summarise(Hits=mean(Hits.at.taxon))
+
+
+
+
+krakenPhylumMeanTopFiltered <- as.data.frame(krakenPhylumMean) %>% filter(Phylum %in% topPhyla)
+
+names(krakenPhylumMean) <- str_replace(names(krakenPhylumMean), "Type", "Depth")
+
+names(krakenPhylumMean) <- str_replace(names(krakenPhylumMean), "Name", "Phylum")
+
+newCrayolaPalette6 <- c("#CB7119", "#404E5A","#5F4F3A", "#D6AEDD", "#FEBAAD", "#6F7285", "#803790", "#0095B6","#FFCD48", "#F653A6")
+
+newCrayolaPalette7 <- c("#FE6F5E","#346114","#CB7119","#D6AEDD","#0095B6","#F653A6", "#803790","#FFCD48","#631F41","#404E5A") 
+
+krakenPhylumMeanTop <- as.data.frame(krakenPhylumMean) %>% group_by(Name) %>% summarise(SumHits=sum(Hits)) %>% arrange(desc(SumHits)) %>% slice(1:5)
+
+amrClassMeanTop <- as.data.frame(amrResultsClass) %>% group_by(Class) %>% summarise(SumHits=sum(Hits)) %>% arrange(desc(SumHits)) %>% slice(1:5)
+
+topAMRClass <- as.vector(amrClassMeanTop$Class)
+
+topPhyla <- as.vector(krakenPhylumMeanTop$Name)
+
+
+krakenPhylumMeanTopFiltered <- as.data.frame(krakenPhylumMean) %>% filter(Name %in% topPhyla)
+
+
+amrClassTopFiltered <- as.data.frame(amrResultsClass) %>% filter(Class %in% topAMRClass)
+
+krakenPhylumMeanTopFiltered <- as.data.frame()
+# Plots for poster
+
+ggplot(amrClassTopFiltered, aes(x=Depth, y=Hits, fill=Class)) + 
+  geom_bar(stat="identity", position="fill") + 
+  scale_fill_manual(values=newCrayolaPalette9) +
+  theme(
+    axis.title.x = element_text(size = 32),
+    axis.title.y = element_text(size = 32),
+    axis.text.x = element_text(size = 28),
+    axis.text.y = element_text(size = 28),
+    legend.title = element_text(size = 32),
+    legend.text = element_text(size = 28),
+    legend.key = element_rect(size = 2),
+    legend.key.size = unit(2, "lines"),
+    legend.spacing = unit(0.2,"lines")
+  ) +
+  labs(x='\nDepth', 
+       y='Hits\n',
+       fill = 'Class\n')
+
+ggplot(krakenPhylumMeanTopFiltered, aes(x=Depth, y=Hits, fill=Phylum)) +
+  geom_bar(stat="identity", position="fill") + 
+  scale_fill_manual(values=newCrayolaPalette8) +
+  theme(
+    axis.title.x = element_text(size = 32),
+    axis.title.y = element_text(size = 32),
+    axis.text.x = element_text(size = 28),
+    axis.text.y = element_text(size = 28),
+    legend.title = element_text(size = 32),
+    legend.text = element_text(size = 28),
+    legend.key = element_rect(size = 2),
+    legend.key.size = unit(2, "lines"),
+    legend.spacing = unit(2,"lines")
+  ) +
+  labs(x='\nDepth', 
+       y='Hits\n',
+       fill = 'Phylum\n')
+  #xlab('\nDepth') +
+  #ylab('Hits\n')
+
+ggplot(amrResultsSumName, aes(Sample_type, Hits)) + geom_bar(stat="identity")
+
+# Rarefaction for list of datasets
+amrResultsTidy <- amrResultsTidy <- amrResults %>% gather(Level, LevelName, c(1,6:8))
+
+amrResultsTidy$Depth <- str_replace(amrResultsTidy$Sample, "\\d+_","")
+amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "\\d$","")
+amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "full", "D1")
+amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "half", "D0.5")
+amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "quar*", "D0.25")
+amrResultsTidy$LevelName <- as.factor(amrResultsTidy$LevelName)
+
+amrResultsList <- split(amrResultsTidy,amrResultsTidy$Level)
+
+amrResultsSummary <- lapply(amrResultsList, function(x){
+  summarizeAMRbySample(x)
+})
+
+amrResultsWide <- lapply(amrResultsSummary, function(x){
+  widenAMR(x)
+})
+
+amrResultsMat <- lapply(amrResultsWide, function(x){
+  matrixAMR(x)
+})
+
+# Awesome!!!
+
+amrResultsMat2 <- lapply(amrResultsMat, function(x){
+  
+  t(x)
+  
+})
+
+# One specific rarefaction curve
+
+rarec(amrResultsMat2[['Name']], step=100, sample=min(rowSums(amrResultsMat2[['Name']])))
+
+# Rarefaction curves for all members of the list
+
+amrRarefy <- lapply(amrResultsMat2, function(x){
+raremax <- min(rowSums(x))
+rarecurve(x, step=5, sample=raremax)
+})
+
+# Unlisting rarefied data and isolating DFs
+amrRarefyDF2 <- lapply(amrRarefy, unlist)
+
+amrRarefyDF2 <- lapply(amrRarefyDF2, function(x){
+  data.frame(otus=x,subsample=attr(x, "names"))
+})
+
+# Isolate Class DF
+amrRarefyClass <- amrRarefyDF2[['Class']]
+
+# Avoid the work below by making sure we have a named list
+
+amrRarefyClassDF$Test <- ifelse(amrRarefyClassDF$subsample == "N1", 
+                                amrRarefyClassDF$Test == sapply(sampleNames, function(x){x}), NA)
+
 
 
 amr_results_class_wide <- amr_results_class %>% spread(Class, Hits, fill = 0)
