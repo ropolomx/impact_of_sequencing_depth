@@ -8,11 +8,16 @@ source('rarefaction_functions.R')
 
 amrResults <- read.csv('AMR/amr_new_dataframe_ROP.csv')
 
-amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample, "\\d+_","")
-amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample_type, "\\d$","")
-amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample_type, "full", "D1")
-amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample_type, "half", "D0.5")
-amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample_type, "quar", "D0.25")
+amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample, 
+                                          "\\d+_","")
+amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample_type, 
+                                          "\\d$","")
+amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample_type, 
+                                          "full", "D1")
+amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample_type, 
+                                          "half", "D0.5")
+amrResultsTidy$Sample_type <- str_replace(amrResultsTidy$Sample_type,
+                                          "quar", "D0.25")
 amrResultsTidy <- amrResultsTidy %>% filter(Coverage_Ratio >= 0.80)
 
 amrLevels <- c("Class", "Mechanism", "Group")
@@ -57,27 +62,29 @@ rarefactionDF$Samples <- rep(Sample, each=21)
 rarefactionDF$Sampling_size <- str_replace(row.names(rarefactionDF), "N","")
 rarefactionDF$Sampling_size <- as.numeric(as.character(rarefactionDF$Sampling_size))
 
-rarefactionDF$Sample_type <- str_replace(rarefactionDF$Samples, "\\d+_", "")
+rarefactionDF$Sample_type <- str_replace(rarefactionDF$Samples, 
+                                         "\\d+_", "")
 
-rarefactionDF$Sample_type <- str_replace(rarefactionDF$Sample_type, "\\d$","")
+rarefactionDF$Sample_type <- str_replace(rarefactionDF$Sample_type, 
+                                         "\\d$","")
 
-rarefactionDF$Sample_number <- str_replace(rarefactionDF$Samples, "_.*", "")
+rarefactionDF$Sample_number <- str_replace(rarefactionDF$Samples, 
+                                           "_.*", "")
 
 halves <- rarefactionDF %>% filter(grepl("half",Sample_type))
 
-rarefactionDFGroup <- rarefactionDF %>% group_by(Sample_number, Sample_type) %>% summarise(meanOTUs = mean(Classes), meanSamples=mean(Sampling_size))
+rarefactionDFGroup <- rarefactionDF %>% 
+  group_by(Sample_number, Sample_type) %>% 
+  summarise(meanOTUs = mean(Classes), meanSamples=mean(Sampling_size))
 
 
-# ggplot rarefaction plots
+# ggplot code for rarefaction plots
 
-ggplot(rarefactionDFGroup, aes(meanSamples, meanOTUs)) + geom_line() + facet_grid(. ~ Sample_type)
+ggplot(rarefactionDFGroup, aes(meanSamples, meanOTUs)) + 
+  geom_line() + 
+  facet_grid(. ~ Sample_type)
 
-ggplot(rarefactionDF, aes(Sampling_size,Classes)) + geom_line(aes(color=Samples)) + facet_grid(Sample_type~ Sample_number)
+ggplot(rarefactionDF, aes(Sampling_size,Classes)) + 
+  geom_line(aes(color=Samples)) + 
+  facet_grid(Sample_type~ Sample_number)
 
-# Venn diagrams
-
-fullClass <- unique(amrResults$Class[amrResults$Sample_type == "D1"])
-halfClass <- unique(amrResults$Class[amrResults$Sample_type == "D0.5"])
-quarClass <- unique(amrResults$Class[amrResults$Sample_type == "D0.25"])
-
-fvhClass <- setdiff(fullClass, halfClass)

@@ -1,6 +1,9 @@
 library(dplyr)
 library(vegan)
-amrResultsClass <- amrResults %>% group_by(Sample, Class) %>% summarise(Hits=sum(Hits_Seen))
+
+amrResultsClass <- amrResults %>% 
+  group_by(Sample, Class) %>% 
+  summarise(Hits=sum(Hits_Seen))
 
 amrResultsClass$Depth <- str_replace(amrResultsClass$Sample, "\\d+_","")
 amrResultsClass$Depth <- str_replace(amrResultsClass$Depth, "\\d$","")
@@ -8,38 +11,68 @@ amrResultsClass$Depth <- str_replace(amrResultsClass$Depth, "full", "D1")
 amrResultsClass$Depth <- str_replace(amrResultsClass$Depth, "half", "D0.5")
 amrResultsClass$Depth <- str_replace(amrResultsClass$Depth, "quar*", "D0.25")
 
+krakenPhylumMean <- kraken %>% 
+  filter(Level.of.Classification == "P") %>% 
+  group_by(Type, Name) %>% 
+  summarise(Hits=mean(Hits.at.taxon))
 
-
-krakenPhylumMean <- kraken %>% filter(Level.of.Classification == "P") %>% group_by(Type, Name) %>% summarise(Hits=mean(Hits.at.taxon))
-
-
-
-
-krakenPhylumMeanTopFiltered <- as.data.frame(krakenPhylumMean) %>% filter(Phylum %in% topPhyla)
+krakenPhylumMeanTopFiltered <- as.data.frame(krakenPhylumMean) %>% 
+  filter(Phylum %in% topPhyla)
 
 names(krakenPhylumMean) <- str_replace(names(krakenPhylumMean), "Type", "Depth")
 
 names(krakenPhylumMean) <- str_replace(names(krakenPhylumMean), "Name", "Phylum")
 
-newCrayolaPalette6 <- c("#CB7119", "#404E5A","#5F4F3A", "#D6AEDD", "#FEBAAD", "#6F7285", "#803790", "#0095B6","#FFCD48", "#F653A6")
+newCrayolaPalette6 <- c(
+  "#CB7119", 
+  "#404E5A",
+  "#5F4F3A",
+  "#D6AEDD",
+  "#FEBAAD",
+  "#6F7285",
+  "#803790",
+  "#0095B6",
+  "#FFCD48",
+  "#F653A6"
+  )
 
-newCrayolaPalette7 <- c("#FE6F5E","#346114","#CB7119","#D6AEDD","#0095B6","#F653A6", "#803790","#FFCD48","#631F41","#404E5A") 
+newCrayolaPalette7 <- c(
+  "#FE6F5E",
+  "#346114",
+  "#CB7119",
+  "#D6AEDD",
+  "#0095B6",
+  "#F653A6",
+  "#803790",
+  "#FFCD48",
+  "#631F41",
+  "#404E5A"
+  ) 
 
-krakenPhylumMeanTop <- as.data.frame(krakenPhylumMean) %>% group_by(Name) %>% summarise(SumHits=sum(Hits)) %>% arrange(desc(SumHits)) %>% slice(1:5)
+krakenPhylumMeanTop <- as.data.frame(krakenPhylumMean) %>% 
+  group_by(Name) %>% 
+  summarise(SumHits=sum(Hits)) %>% 
+  arrange(desc(SumHits)) %>% 
+  slice(1:5)
 
-amrClassMeanTop <- as.data.frame(amrResultsClass) %>% group_by(Class) %>% summarise(SumHits=sum(Hits)) %>% arrange(desc(SumHits)) %>% slice(1:5)
+amrClassMeanTop <- as.data.frame(amrResultsClass) %>% 
+  group_by(Class) %>% 
+  summarise(SumHits=sum(Hits)) %>% 
+  arrange(desc(SumHits)) %>% 
+  slice(1:5)
 
 topAMRClass <- as.vector(amrClassMeanTop$Class)
 
 topPhyla <- as.vector(krakenPhylumMeanTop$Name)
 
+krakenPhylumMeanTopFiltered <- as.data.frame(krakenPhylumMean) %>% 
+  filter(Name %in% topPhyla)
 
-krakenPhylumMeanTopFiltered <- as.data.frame(krakenPhylumMean) %>% filter(Name %in% topPhyla)
-
-
-amrClassTopFiltered <- as.data.frame(amrResultsClass) %>% filter(Class %in% topAMRClass)
+amrClassTopFiltered <- as.data.frame(amrResultsClass) %>% 
+  filter(Class %in% topAMRClass)
 
 krakenPhylumMeanTopFiltered <- as.data.frame()
+
 # Plots for poster
 
 ggplot(amrClassTopFiltered, aes(x=Depth, y=Hits, fill=Class)) + 
@@ -141,13 +174,16 @@ amrRarefyClassDF$Test <- ifelse(amrRarefyClassDF$subsample == "N1",
                                 amrRarefyClassDF$Test == sapply(sampleNames, function(x){x}), NA)
 
 
+amr_results_class_wide <- amr_results_class %>%
+    spread(Class, Hits, fill = 0)
 
-amr_results_class_wide <- amr_results_class %>% spread(Class, Hits, fill = 0)
-amr_results_class_wide <- amr_results_class %>% spread(Sample, Hits, fill = 0)
+amr_results_class_wide <- amr_results_class %>%
+  spread(Sample, Hits, fill = 0)
+
 table(annotations$class)
 
-
-amr_results_class_wide <- amr_results_class %>% spread(Class, Hits, fill = 0)
+amr_results_class_wide <- amr_results_class %>% 
+  spread(Class, Hits, fill = 0)
 
 amr_results_class_mat <- amr_results_class_wide[,2:ncol(amr_results_class_wide)]
 amr_class_norm <- data.frame(MRcounts(amr_class_experiment, norm=T))

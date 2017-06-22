@@ -1,15 +1,32 @@
+# Functions for rarefaction analysis
+
+#' Summarize AMR results by levels
+#' 
+#' @param X A tidy dataset.
+#' @param amrLevel A level of the MEGARes database. For example: class, group 
+#' or mechanism
+#' 
+#' @return Summarized results of \code{X} by \code{amrLevel} 
+#' 
+#'
+#' @examples 
+
+
 summarizeAMRlevels <- function(X, amrLevel) {
-  amrResultsSummarised <- X %>% group_by_('Sample', amrLevel) %>% summarise(Hits=sum(Hits_Seen))
+  amrResultsSummarised <- X %>% group_by_('Sample', amrLevel) %>% 
+    summarise(Hits=sum(Hits_Seen))
   return(amrResultsSummarised)
 }
 
 summarizeAMRbySample <- function(X) {
-  amrResultsSummarised <- X %>% group_by_('Sample','LevelName') %>% summarise(Hits=sum(Hits_Seen))
+  amrResultsSummarised <- X %>% group_by_('Sample','LevelName') %>% 
+    summarise(Hits=sum(Hits_Seen))
   return(amrResultsSummarised)
 }
   
 widenAMR <- function(summarizedAMR) {
-  amrLevelWide <- summarizedAMR %>% spread('Sample', 'Hits', fill = 0)
+  amrLevelWide <- summarizedAMR %>% 
+    spread('Sample', 'Hits', fill = 0)
   return(amrLevelWide)
 }
 
