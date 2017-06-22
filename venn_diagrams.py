@@ -56,10 +56,10 @@ phylumQuarSet = allCatsSets['P'][2]
 phylumsets = [phylumfullset, phylumhalfset, phylumquarset]
 
 
-genusfullset = allcatssets['g'][0]
-genushalfset = allcatssets['g'][1]
-genusquarset = allcatssets['g'][2]
-genussets = [genusfullset, genushalfset, genusquarset]
+genusFullSet = allCatsSets['g'][0]
+genusHalfSet = allCatsSets['g'][1]
+genusQuarSet = allCatsSets['g'][2]
+genusSets = [genusFullSet, genusHalfSet, genusQuarSet]
 
 
 v3Phylum = venn3_unweighted(phylumSets, ('D1', 'D0.5', 'D0.25'))
@@ -91,4 +91,20 @@ plt.title('Genus')
 plt.savefig('genusVennUpdated2.png')
 plt.clf()
 plt.cla()
+
+
+
+geneFullSet = allAMRCatsSets['Name'][0]
+geneHalfSet = allAMRCatsSets['Name'][1]
+geneQuarSet = allAMRCatsSets['Name'][2]
+geneSets = [geneFullSet, geneHalfSet, geneQuarSet]
+
+
+v3gene = venn3_unweighted(geneSets, ('D1', 'D0.5', 'D0.25'))
+plt.title('gene')
+plt.savefig('genusVenn.png')
+plt.clf()
+plt.cla()
+
+
 
