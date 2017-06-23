@@ -19,9 +19,11 @@ krakenPhylumMean <- kraken %>%
 krakenPhylumMeanTopFiltered <- as.data.frame(krakenPhylumMean) %>% 
   filter(Phylum %in% topPhyla)
 
-names(krakenPhylumMean) <- str_replace(names(krakenPhylumMean), "Type", "Depth")
+names(krakenPhylumMean) <- str_replace(names(krakenPhylumMean), 
+                                       "Type", "Depth")
 
-names(krakenPhylumMean) <- str_replace(names(krakenPhylumMean), "Name", "Phylum")
+names(krakenPhylumMean) <- str_replace(names(krakenPhylumMean), 
+                                       "Name", "Phylum")
 
 newCrayolaPalette6 <- c(
   "#CB7119", 
@@ -149,7 +151,9 @@ amrResultsMat2 <- lapply(amrResultsMat, function(x){
 
 # One specific rarefaction curve
 
-rarec(amrResultsMat2[['Name']], step=100, sample=min(rowSums(amrResultsMat2[['Name']])))
+rarec(amrResultsMat2[['Name']], 
+      step=100, 
+      sample=min(rowSums(amrResultsMat2[['Name']])))
 
 # Rarefaction curves for all members of the list
 
