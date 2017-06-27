@@ -118,7 +118,7 @@ ggplot(krakenPhylumMeanTopFiltered, aes(x=Depth, y=Hits, fill=Phylum)) +
 ggplot(amrResultsSumName, aes(Sample_type, Hits)) + geom_bar(stat="identity")
 
 # Rarefaction for list of datasets
-amrResultsTidy <- amrResultsTidy <- amrResults %>% gather(Level, LevelName, c(1,6:8))
+amrResultsTidy <- amrResults %>% gather(Level, LevelName, c(1,6:8))
 
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Sample, "\\d+_","")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "\\d$","")

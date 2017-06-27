@@ -62,6 +62,15 @@ matrixAMR <- function(amrLevelWide) {
   return(amrLevelMat)
 }
 
+
+#' Title
+#'
+#' @param matrixAMR 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 normalizeAMR <- function(matrixAMR){
   experiment <- newMRexperiment(matrixAMR)
   cumNorm(experiment)
@@ -72,6 +81,82 @@ normalizeAMR <- function(matrixAMR){
   return(extractExperiment)
 }
 
+#' Title
+#'
+#' @param x 
+#' @param step 
+#' @param sample 
+#' @param xlab 
+#' @param ylab 
+#' @param label 
+#' @param col 
+#' @param lty 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' 
+rarecurve_ROP <- function (x, step = 1, sample, xlab = "Sample Size", ylab = "Species", 
+          label = TRUE, col, lty, ...) 
+{
+  x <- as.matrix(x)
+  if (!identical(all.equal(x, round(x)), TRUE)) 
+    stop("function accepts only integers (counts)")
+  if (missing(col)) 
+    col <- par("col")
+  if (missing(lty)) 
+    lty <- par("lty")
+  tot <- rowSums(x)
+  S <- specnumber(x)
+  if (any(S <= 0)) {
+    message("empty rows removed")
+    x <- x[S > 0, , drop = FALSE]
+    tot <- tot[S > 0]
+    S <- S[S > 0]
+  }
+  nr <- nrow(x)
+  col <- rep(col, length.out = nr)
+  lty <- rep(lty, length.out = nr)
+  out <- lapply(seq_len(nr), function(i) {
+    n <- seq(1, tot[i], by = step)
+    if (n[length(n)] != tot[i]) 
+      n <- c(n, tot[i])
+    drop(rarefy(x[i, ], n))
+  })
+  Nmax <- sapply(out, function(x) max(attr(x, "Subsample")))
+  Smax <- sapply(out, max)
+  plot(c(1, max(Nmax)), c(1, max(Smax)), xlab = xlab, ylab = ylab, 
+       type = "n", ...)
+  if (!missing(sample)) {
+    abline(v = sample)
+    rare <- sapply(out, function(z) approx(x = attr(z, "Subsample"), 
+                                           y = z, xout = sample, rule = 1)$y)
+    abline(h = rare, lwd = 0.5)
+  }
+  for (ln in seq_along(out)) {
+    N <- attr(out[[ln]], "Subsample")
+    lines(N, out[[ln]], col = col[ln], lty = lty[ln], ...)
+  }
+  if (label) {
+    ordilabel(cbind(tot, S), labels = rownames(x), ...)
+  }
+  return(out)
+  #invisible(out)
+}
+
+
+#' Title
+#'
+#' @param X 
+#' @param step 
+#' @param method 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 alphaRarefactionROP <- function(X, step=0.05, method='invsimpson') {
     S <- specnumber(X, MARGIN=2)
     raremax <- min(colSums(X))
@@ -93,6 +178,14 @@ alphaRarefactionROP <- function(X, step=0.05, method='invsimpson') {
                 rarefy_out=rarefy_out))
 } 
 
+#' Title
+#'
+#' @param rarefiedData 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 samplesByLevel <- function(rarefiedData) {
   
   sampleNames <- attr(alphaRarefactionROP(normalizeAMR)$raw_species_abundance, "names")
@@ -125,7 +218,7 @@ ggplot(rarefactionDFGroup, aes(meanSamples, meanOTUs)) + geom_line() + facet_gri
 ggplot(rarefactionDF, aes(Sampling_size,Classes)) + geom_line(aes(color=Samples)) + facet_grid(Sample_type~ Sample_number)
 
 
-# from Stack Overflow
+# Generating rarefaction curve with different curves (from Stack Overflow)
 
 rarec <- function (x, step = 1, sample, xlab = "Sample Size", ylab = "Genes", 
                    label = TRUE, cols = c(rep('red', nrow(x) / 2), rep('blue', nrow(x) / 2)), ...) {

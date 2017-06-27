@@ -31,31 +31,12 @@ amrExperiment <- lapply(amrSummariesMat, function(i){normalizeAMR(i)})
 
 amrRarefaction <- lapply(amrExperiment, function(X){alphaRarefactionROP(X)})
 
-
-#alpha_rarefaction <- function(X, step=0.05, method='invsimpson') {
-#    S <- specnumber(X, MARGIN=2)
-#    raremax <- min(colSums(X))
-#    tot <- colSums(X)
-#    nr <- ncol(X)
-#    out <- lapply(seq_len(nr), function(i){
-#      n <- seq(1, tot[i], by = tot[i]*step)
-#      if (n[length(n)] != tot[i])
-#        n <- c(n, tot[i])
-#      drop(rarefy(X[i, ], n))
-#      })
-#    Srare <- rarefy(X, raremax, MARGIN=2)
-#    Xrare <- t(rrarefy(t(X), raremax))
-#    alphadiv <- diversity(Xrare, index=method, MARGIN=2)
-#    return(list(raw_species_abundance=S,
-#                #rarefied_species_abundance=Srare,
-#                #rarefied_data=Xrare,
-#                alphadiv=alphadiv,
-#                out=out))
-#}
-
 sampleNames <- lapply(amrExperiment, function(i){attr(i$raw_species_abundance, "names")})
+
 unlistExperiments <- lapply(amrRarefaction$rarefy_out, unlist)
+
 experimentDF <- lapply(unlistExperiments, data.frame)
+
 rarefactionDF <- do.call("rbind",ggplot_rarefy_df[1:32])
 names(rarefactionDF) <- "Classes"
 rarefactionDF$Samples <- rep(Sample, each=21)

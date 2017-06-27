@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import pandas as pd
 
 kraken['SampleName'] = kraken['Sample'].str.split('_').str[0]+'_'+kraken['Sample'].str.split('_').str[1]
