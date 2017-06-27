@@ -2,10 +2,11 @@
 
 # Load necessary packages
 library(readr)
-library(dplyr)
 library(tidyr)
+library(dplyr)
 library(stringr)
 library(purrr)
+library(ggplot2)
 library(metagenomeSeq)
 library(vegan)
 
@@ -46,7 +47,6 @@ amrLevels <- c("Class", "Mechanism", "Group", "Gene Id")
 amrResultsList <- split(amrResultsTidy,amrResultsTidy$Level)
 
 # Summarize results: add counts by Sample and AMR Level
-
 amrResultsSummary <- lapply(amrResultsList, function(x){
   summarizeAMRbySample(x)
 })

@@ -192,7 +192,7 @@ samplesByLevel <- function(rarefiedData) {
   
 }
 
-ggplot_rarefy_df <- lapply(ggplot_rarefy$out, unlist)
+ggplot_rarefy_df <- lapply(rarecurve_ROP$out, unlist)
 
 ggplot_rarefy_df <- lapply(ggplot_rarefy_df, data.frame)
 
@@ -216,37 +216,3 @@ rarefactionDFGroup <- rarefactionDF %>% group_by(Sample_number, Sample_type) %>%
 ggplot(rarefactionDFGroup, aes(meanSamples, meanOTUs)) + geom_line() + facet_grid(. ~ Sample_type)
 
 ggplot(rarefactionDF, aes(Sampling_size,Classes)) + geom_line(aes(color=Samples)) + facet_grid(Sample_type~ Sample_number)
-
-
-# Generating rarefaction curve with different curves (from Stack Overflow)
-
-rarec <- function (x, step = 1, sample, xlab = "Sample Size", ylab = "Genes", 
-                   label = TRUE, cols = c(rep('red', nrow(x) / 2), rep('blue', nrow(x) / 2)), ...) {
-  tot <- rowSums(x)
-  S <- specnumber(x)
-  nr <- nrow(x)
-  out <- lapply(seq_len(nr), function(i) {
-    n <- seq(1, tot[i], by = step)
-    if (n[length(n)] != tot[i]) 
-      n <- c(n, tot[i])
-    drop(rarefy(x[i, ], n))
-  })
-  Nmax <- sapply(out, function(x) max(attr(x, "Subsample")))
-  Smax <- sapply(out, max)
-  plot(c(1, max(Nmax)), c(1, max(Smax)), xlab = xlab, ylab = ylab, 
-       type = "n", ...)
-  if (!missing(sample)) {
-    abline(v = sample)
-    rare <- sapply(out, function(z) approx(x = attr(z, "Subsample"), 
-                                           y = z, xout = sample, rule = 1)$y)
-    abline(h = rare, lwd = 0.5)
-  }
-  for (ln in seq_len(length(out))) {
-    N <- attr(out[[ln]], "Subsample")
-    lines(N, out[[ln]], col = cols[ln], ...)
-  }
-  if (label) {
-    ordilabel(cbind(tot, S), labels = rownames(x), ...)
-  }
-  invisible(out)
-}
