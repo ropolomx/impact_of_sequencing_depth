@@ -1,0 +1,58 @@
+---
+title: "Analysis of 2-4-8 study data"
+output: html_notebook
+---
+
+## Galaxy workflow 
+
+Merged read files were analyzed using a custom workflow on the Galaxy instance of the National Microbiology Laboratory (Public Health Agency of Canada). The workflow used in this study is largely based on the AmrPlusPlus Galaxy workflow, but it contains modifications. Those modifications include the integration of taxonomical classification in the same workflow, and the ommission of filtering reads vs. host genome.
+
+In general terms, the Galaxy workflow includes the following processes:
+
+1. __Trimming and quality assessment__
+2. __AMR classification__
+3. __Taxonomic classification__
+
+In this document, the statistical analyses will also be discussed.
+
+### Trimming and quality assessment
+
+Reads were trimmed with Trimmomatic, using the following paramaters:
+    * ILLUMINACLIP using TruSeq3 paired-end adapters (2:30:10:3)
+    * Trimmed the leading 3 bases
+    * Trimmed the trailing 3 bases
+    * Sliding window quality filtering: every four bases, minimum quality= 15
+    * Kept reads with a length of at least 36 bases after trimming
+  
+### AMR classification
+
+The reads resulting after trimming were mapped vs. the MEGAREs database v1.01 using the Map with BWA tool in (version 0.7.12.1). Then, the resulting BAM alignment was sorted by coordinates using the X tool, and and then it was converted to SAM format. The SAM file was analyzed with 3 tools: Coverage Sampler, SnipFinder, RarefactionAnalyzer
+  
+
+### Taxonomic classification
+
+Trimmed reads were classified with `kraken` using a database containing bacterial, virual, fungal, protozoal and archaeal genomes. Classified reads were then filtered with `kraken-filter` (score = 20). Finally, a report of the taxonomic classification was generated with `kraken-report`.
+
+## Exploratory and statistical analyses
+
+Kraken reports were processed with custom scripts.
+
+### Generation of rarefaction curves
+
+0. Coverage sampler results were parsed with in-house Python script
+
+1. Reshape data to wide format
+
+2. Normalize data with cumSum normalization
+
+3. Removal of housekeeping genes (AMR) and PhiX (Kraken)
+
+4. Construction of rarefaction curves
+
+    * Plot with `ggplot2`
+  
+  |Sample|Sampling Size|No. of OTUs|
+  |------|-------------|-----------|
+  
+
+4. Processing with Steven's scripts
