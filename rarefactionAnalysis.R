@@ -41,7 +41,8 @@ amrResultsTidy$LevelName <- as.factor(amrResultsTidy$LevelName)
 amrResultsTidy <- amrResultsTidy %>% filter(Coverage_Ratio >= 0.80)
 
 # Vector containing amrLevels to analyze
-amrLevels <- c("Class", "Mechanism", "Group", "Gene Id")
+#amrLevels <- c("Class", "Mechanism", "Group", "Gene Id")
+amrLevels <- c("Class", "Mechanism", "Group", "Name")
 
 # Split tidy data frame of AMR results according to the Level vector
 amrResultsList <- split(amrResultsTidy,amrResultsTidy$Level)
@@ -92,18 +93,29 @@ amrResultsMat <- lapply(amrResultsMat, function(x){
 
 # purrr version
 
-amrRarefy <- map(amrResultsMat2, function(x){
+amrRarefy <- map(amrResultsMat, function(x){
   raremax <- min(rowSums(x))
-  rarecurve(x, step=5, sample=raremax)
+  rarecurve_ROP(x, step=5, sample=raremax)
 })
 
 # mclapply version
 
 amrRarefy <- mclapply(amrResultsMat, function(x){
   raremax <- min(rowSums(x))
-  rarecurve(x, step=5, sample=raremax)
-}
-,mc.cores=10)
+  rarecurve_ROP(x, step=5, sample=raremax)
+},mc.cores=12)
+
+# Use microbenchmark to compare between the two approaches
+
+mbm <- microbenchmark(
+  mapping = map(amrResultsMat, function(x){
+    raremax <- min(rowSums(x))
+    rarecurve_ROP(x, step=5, sample=raremax)}),
+  multicore = mclapply(amrResultsMat, function(x){
+    raremax <- min(rowSums(x)) 
+    rarecurve_ROP(x, step=5, sample=raremax)}, mc.cores=12),
+  times=2
+)
 
 # Unlisting rarefied data and isolating DFs
 amrRarefyDF2 <- lapply(amrRarefy, unlist)
