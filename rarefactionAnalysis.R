@@ -1,7 +1,7 @@
 # Rarefaction analysis of 2-4-8 study data
 
 # Load necessary packages
-
+library(readr)
 library(dplyr)
 library(tidyr)
 library(stringr)
@@ -12,11 +12,20 @@ library(vegan)
 # Source script with functions
 source('rarefaction_functions.R')
 
-# Clean AMR data and convert it to "tidy" format
+# Read AMR data
 
-amrResults <- read.csv('noelle/AMR/amr_new_dataframe_ROP.csv')
+# TODO: Need to add a column with sample name to the Coverage Sampler output
+#amrResults <- read_tsv('FC_N013.tabular_parsed.tab')
 
-# Tidy results and change the names of the sequencing depths
+amrResults <- read_csv('noelle/AMR/amr_new_dataframe_ROP.csv')
+
+# TODO: If output is generated from Rarefaction Analyzer,
+# see how it can be applied to the analysis of Kraken data, 
+# although it seems that program can only be applied to process SAM files
+
+# Convert AMR results to "tidy" format
+# Change the names of the sequencing depths
+
 amrResultsTidy <- amrResults %>% gather(Level, LevelName, c(1,6:8))
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Sample, "\\d+_","")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "\\d$","")
@@ -95,9 +104,6 @@ amrRarefy <- mclapply(amrResultsMat, function(x){
   rarecurve(x, step=5, sample=raremax)
 }
 ,mc.cores=10)
-
-
-
 
 # Unlisting rarefied data and isolating DFs
 amrRarefyDF2 <- lapply(amrRarefy, unlist)
