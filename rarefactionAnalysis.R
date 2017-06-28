@@ -84,19 +84,12 @@ amrResultsMat <- lapply(amrResultsMat, function(x){
 # Rarefaction curves for all members of the list
 # This step requires optimization (parallel mapping or compiling, maybe?)
 
-# Lapply version
-
-#amrRarefy <- lapply(amrResultsMat2, function(x){
-#raremax <- min(rowSums(x))
-#rarecurve(x, step=5, sample=raremax)
-#})
-
 # purrr version
 
-amrRarefy <- map(amrResultsMat, function(x){
-  raremax <- min(rowSums(x))
-  rarecurve_ROP(x, step=5, sample=raremax)
-})
+#amrRarefy <- map(amrResultsMat, function(x){
+#  raremax <- min(rowSums(x))
+#  rarecurve_ROP(x, step=5, sample=raremax)
+#})
 
 # mclapply version
 
@@ -116,6 +109,14 @@ mbm <- microbenchmark(
     rarecurve_ROP(x, step=5, sample=raremax)}, mc.cores=12),
   times=2
 )
+
+# Results
+# Unit: seconds
+# expr      min       lq     mean   median       uq      max neval
+# mapping 432.4910 432.4910 439.0898 439.0898 445.6887 445.6887     2
+# multicore 140.0049 140.0049 140.8782 140.8782 141.7515 141.7515     2
+
+# mclapply 
 
 # Unlisting rarefied data and isolating DFs
 amrRarefyDF2 <- lapply(amrRarefy, unlist)

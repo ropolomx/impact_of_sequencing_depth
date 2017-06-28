@@ -142,8 +142,8 @@ rarecurve_ROP <- function (x, step = 1, sample, xlab = "Sample Size", ylab = "Sp
   if (label) {
     ordilabel(cbind(tot, S), labels = rownames(x), ...)
   }
-  return(out)
-  #invisible(out)
+  return(out) # This will plot automatically
+  #invisible(out) # This will not plot automatically
 }
 
 
