@@ -1,7 +1,8 @@
 # Rarefaction analysis of 2-4-8 study data
-# Usage of Kraken and AMR data
+# Processing of AMR and Kraken data
 
 # Load necessary packages
+
 library(readr)
 library(tidyr)
 library(dplyr)
@@ -12,9 +13,10 @@ library(metagenomeSeq)
 library(vegan)
 
 # Source script with functions
-source('rarefaction_functions.R')
 
-# Read AMR data
+source('rarefaction_utility_functions.R')
+
+# Read AMR and Kraken data
 
 # TODO: Need to add a column with sample name to the Coverage Sampler output
 #amrResults <- read_tsv('FC_N013.tabular_parsed.tab')
@@ -55,6 +57,7 @@ krakenResults$Depth <- str_replace(krakenResults$Depth, "quar*", "D0.25")
 amrResultsTidy$LevelName <- as.factor(amrResultsTidy$LevelName)
 
 # Keep results with over 80 % coverage ratio
+
 amrResultsTidy <- amrResultsTidy %>% filter(Coverage_Ratio >= 0.80)
 
 # Vectors containing amr Levels and taxon levels to analyze
@@ -139,6 +142,7 @@ mbm <- microbenchmark(
 # mclapply 
 
 # Unlisting rarefied data and isolating DFs
+
 amrRarefyDF2 <- lapply(amrRarefy, unlist)
 
 amrRarefyDF2 <- lapply(amrRarefyDF2, function(x){
