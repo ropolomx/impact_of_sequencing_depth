@@ -57,17 +57,17 @@ amrResultsTidy$LevelName <- as.factor(amrResultsTidy$LevelName)
 # Keep results with over 80 % coverage ratio
 amrResultsTidy <- amrResultsTidy %>% filter(Coverage_Ratio >= 0.80)
 
-
 # Vectors containing amr Levels and taxon levels to analyze
 #amrLevels <- c("Class", "Mechanism", "Group", "Gene Id")
 amrLevels <- c("Class", "Mechanism", "Group", "Name")
 
-taxonLevels <- c("")
+taxonLevels <- c("D", "K", "C", "O", "F", "G", "S", "-")
 
 # Split tidy data frame of AMR results according to the Level vector
 amrResultsList <- split(amrResultsTidy,amrResultsTidy$Level)
 
 # Summarize results: add counts by Sample and AMR Level
+
 amrResultsSummary <- lapply(amrResultsList, function(x){
   summarizeAMRbySample(x)
 })
