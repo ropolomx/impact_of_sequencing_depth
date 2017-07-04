@@ -281,3 +281,6 @@ rarecurve_ROP <- function (x, step = 5, sample=raremax, label = TRUE, col, lty, 
 }
 
 rarefy_ggplot <- rarecurve_ROP(amr_results_class_mat)
+
+
+split(amrResultsTidy,amrResultsTidy$Level)

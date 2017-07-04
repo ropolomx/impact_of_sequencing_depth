@@ -12,7 +12,7 @@ library(ggplot2)
 library(metagenomeSeq)
 library(vegan)
 
-# Source script with functions
+# Source script of utility functions
 
 source('rarefaction_utility_functions.R')
 
@@ -58,16 +58,25 @@ amrResultsTidy$LevelName <- as.factor(amrResultsTidy$LevelName)
 
 # Keep results with over 80 % coverage ratio
 
-amrResultsTidy <- amrResultsTidy %>% filter(Coverage_Ratio >= 0.80)
+amrResultsTidy <- amrResultsTidy %>% 
+  filter(Coverage_Ratio >= 0.80)
 
 # Vectors containing amr Levels and taxon levels to analyze
 #amrLevels <- c("Class", "Mechanism", "Group", "Gene Id")
-amrLevels <- c("Class", "Mechanism", "Group", "Name")
+
+amrResultsTidy$Level <- factor(amrResultsTidy$Level, 
+                               levels = c('Class', 'Mechanism', 'Group', 'Name'))
+
+amrLevels <- levels(amrResultsTidy$Level)
 
 taxonLevels <- c("D", "K", "C", "O", "F", "G", "S", "-")
 
+
 # Split tidy data frame of AMR results according to the Level vector
-amrResultsList <- split(amrResultsTidy,amrResultsTidy$Level)
+
+amrResultsList <- amrResultsTidy %>% 
+  split(.$Level) %>% #splitting dataframe using base R but with purrr's piping
+  set_names(nm=amrLevels)
 
 # Summarize results: add counts by Sample and AMR Level
 
@@ -119,7 +128,7 @@ amrResultsMat <- lapply(amrResultsMat, function(x){
 amrRarefy <- mclapply(amrResultsMat, function(x){
   raremax <- min(rowSums(x))
   rarecurve_ROP(x, step=5, sample=raremax)
-},mc.cores=12)
+},mc.cores=3)
 
 # Use microbenchmark to compare between the two approaches
 
@@ -139,7 +148,7 @@ mbm <- microbenchmark(
 # mapping 432.4910 432.4910 439.0898 439.0898 445.6887 445.6887     2
 # multicore 140.0049 140.0049 140.8782 140.8782 141.7515 141.7515     2
 
-# mclapply 
+# mclapply wins!
 
 # Unlisting rarefied data and isolating DFs
 
