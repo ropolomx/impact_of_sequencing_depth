@@ -1,4 +1,5 @@
 # Rarefaction analysis of 2-4-8 study data
+# Usage of Kraken and AMR data
 
 # Load necessary packages
 library(readr)
@@ -20,29 +21,48 @@ source('rarefaction_functions.R')
 
 amrResults <- read_csv('noelle/AMR/amr_new_dataframe_ROP.csv')
 
+krakenResults <- read_csv('noelle/Kraken/kraken_new_dataframe.csv')
+
 # TODO: If output is generated from Rarefaction Analyzer,
 # see how it can be applied to the analysis of Kraken data, 
 # although it seems that program can only be applied to process SAM files
 
 # Convert AMR results to "tidy" format
-# Change the names of the sequencing depths
+# Kraken table is already in tidy format.
 
-amrResultsTidy <- amrResults %>% gather(Level, LevelName, c(1,6:8))
+amrResultsTidy <- amrResults %>% 
+  gather(Level, LevelName, c(1,6:8))
+
+# Change the names of the AMR sequencing depths columns
+
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Sample, "\\d+_","")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "\\d$","")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "full", "D1")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "half", "D0.5")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "quar*", "D0.25")
 
+# Change the names of the Kraken sequencing depths columns
+
+krakenResults$Depth <- str_replace(krakenResults$Sample, "_filtered2_report$","")
+krakenResults$Depth <- str_replace(krakenResults$Depth, "^\\d+_","")
+krakenResults$Depth <- str_replace(krakenResults$Depth, "\\d$","")
+krakenResults$Depth <- str_replace(krakenResults$Depth, "full", "D1")
+krakenResults$Depth <- str_replace(krakenResults$Depth, "half", "D0.5")
+krakenResults$Depth <- str_replace(krakenResults$Depth, "quar*", "D0.25")
+
 # Convert the LevelName to Factor
+
 amrResultsTidy$LevelName <- as.factor(amrResultsTidy$LevelName)
 
 # Keep results with over 80 % coverage ratio
 amrResultsTidy <- amrResultsTidy %>% filter(Coverage_Ratio >= 0.80)
 
-# Vector containing amrLevels to analyze
+
+# Vectors containing amr Levels and taxon levels to analyze
 #amrLevels <- c("Class", "Mechanism", "Group", "Gene Id")
 amrLevels <- c("Class", "Mechanism", "Group", "Name")
+
+taxonLevels <- c("")
 
 # Split tidy data frame of AMR results according to the Level vector
 amrResultsList <- split(amrResultsTidy,amrResultsTidy$Level)
