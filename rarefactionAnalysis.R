@@ -127,20 +127,20 @@ amrResultsMat <- lapply(amrResultsMat, function(x){
 
 amrRarefy <- mclapply(amrResultsMat, function(x){
   raremax <- min(rowSums(x))
-  rarecurve_ROP(x, step=5, sample=raremax)
+  rarecurve(x, step=5, sample=raremax)
 },mc.cores=3)
 
 # Use microbenchmark to compare between the two approaches
 
-mbm <- microbenchmark(
-  mapping = map(amrResultsMat, function(x){
-    raremax <- min(rowSums(x))
-    rarecurve_ROP(x, step=5, sample=raremax)}),
-  multicore = mclapply(amrResultsMat, function(x){
-    raremax <- min(rowSums(x)) 
-    rarecurve_ROP(x, step=5, sample=raremax)}, mc.cores=12),
-  times=2
-)
+#mbm <- microbenchmark(
+#  mapping = map(amrResultsMat, function(x){
+#    raremax <- min(rowSums(x))
+#    rarecurve(x, step=5, sample=raremax)}),
+#  multicore = mclapply(amrResultsMat, function(x){
+#    raremax <- min(rowSums(x)) 
+#    rarecurve(x, step=5, sample=raremax)}, mc.cores=12),
+#  times=2
+#)
 
 # Results
 # Unit: seconds
@@ -150,35 +150,20 @@ mbm <- microbenchmark(
 
 # mclapply wins!
 
-# Unlisting rarefied data and isolating DFs
+# Rename list of rarefied data using the sample names
+# Need to think of a better way to extract the sample names
 
-amrRarefyDF2 <- lapply(amrRarefy, unlist)
+samples <- rownames(amrResultsMat[["Class"]])
 
-amrRarefyDF2 <- lapply(amrRarefyDF2, function(x){
-  data.frame(otus=x,subsample=attr(x, "names"))
-})
+# Review syntax here
+# Might need to add function to utility function list
 
-# Isolate Class DF
-amrRarefyClass <- amrRarefyDF2[['Class']]
+amrRarefy <- mclapply(amrRarefy, function(x) set_names(x,samples), mc.cores=3)
 
-# Avoid the work below by making sure we have a named list
+# Generate list of dataframes
+# Hacky, but it works. Need to make it cleaner and faster.
 
-amrRarefyClassDF$Test <- ifelse(amrRarefyClassDF$subsample == "N1", 
-                                amrRarefyClassDF$Test == sapply(sampleNames, function(x){x}), NA)
+amrRarefy <- amrRarefy %>% map(as_vector)
 
+amrRarefyDF <- map(amrRarefy, function(x) as_tibble(x, attr(x, "names")))
 
-amr_results_class_wide <- amr_results_class %>%
-    spread(Class, Hits, fill = 0)
-
-amr_results_class_wide <- amr_results_class %>%
-  spread(Sample, Hits, fill = 0)
-
-table(annotations$class)
-
-amr_results_class_wide <- amr_results_class %>% 
-  spread(Class, Hits, fill = 0)
-
-amr_results_class_mat <- amr_results_class_wide[,2:ncol(amr_results_class_wide)]
-amr_class_norm <- data.frame(MRcounts(amr_class_experiment, norm=T))
-amr_class_norm <- t(amr_class_norm)
-row.names(amr_class_norm) <- str_replace(row.names(amr_class_norm), "X", "")
