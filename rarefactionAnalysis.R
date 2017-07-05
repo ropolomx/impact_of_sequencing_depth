@@ -188,3 +188,4 @@ mc.cores=3
 amrRarefyDF <- do.call("rbind", amrRarefyDF)
 amrRarefyDF$AMRLevel <- row.names(amrRarefyDF)
 amrRarefyDF$AMRLevel <- str_extract(amrRarefyDF$AMRLevel, "^\\w\\b")
+
