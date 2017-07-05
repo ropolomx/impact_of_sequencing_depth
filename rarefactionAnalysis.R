@@ -163,7 +163,23 @@ amrRarefy <- mclapply(amrRarefy, function(x) set_names(x,samples), mc.cores=3)
 # Generate list of dataframes
 # Hacky, but it works. Need to make it cleaner and faster.
 
-amrRarefy <- amrRarefy %>% map(as_vector)
+amrRarefy <- amrRarefy %>% 
+  map(as_vector)
 
 amrRarefyDF <- map(amrRarefy, function(x) as_tibble(x, attr(x, "names")))
 
+# Split rownames in order to generate columns with useful information
+
+amrRarefyDF <- mclapply(amrRarefyDF, function(x){
+  x$Sample <- row.names(x)
+  x$Subsample <- str_extract(x$Sample, "N\\d+")
+  x$Subsample <- as.numeric(str_replace(x$Subsample, "N",""))
+  x$Depth <- str_replace(x$Sample, "\\.N.*$", "")
+  x$Depth <- str_replace(x$Depth, "^\\d+_", "")
+  x$SampleNumber <- str_replace(x$Sample, "_.*", "")
+  x$Sample <- str_replace(x$Sample, "\\.N.*$", "")
+  x
+}, 
+mc.cores=3
+)
+  
