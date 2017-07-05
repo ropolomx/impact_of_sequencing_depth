@@ -170,7 +170,7 @@ amrRarefyDF <- map(amrRarefy, function(x) as_tibble(x, attr(x, "names")))
 
 # Split rownames in order to generate columns with useful information
 
-amrRarefyDF <- mclapply(amrRarefyDF, function(x){
+amrRarefyDF <- mclapply(amrRarefyDF, function(x) {
   x$Sample <- row.names(x)
   x$Subsample <- str_extract(x$Sample, "N\\d+")
   x$Subsample <- as.numeric(str_replace(x$Subsample, "N",""))
@@ -182,4 +182,9 @@ amrRarefyDF <- mclapply(amrRarefyDF, function(x){
 }, 
 mc.cores=3
 )
-  
+
+# Generate one single dataframe and create column for AMR Level
+
+amrRarefyDF <- do.call("rbind", amrRarefyDF)
+amrRarefyDF$AMRLevel <- row.names(amrRarefyDF)
+amrRarefyDF$AMRLevel <- str_extract(amrRarefyDF$AMRLevel, "^\\w\\b")
