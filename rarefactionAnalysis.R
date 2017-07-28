@@ -18,12 +18,36 @@ source('rarefaction_utility_functions.R')
 
 # Read AMR and Kraken data
 
-# TODO: Need to add a column with sample name to the Coverage Sampler output
 #amrResults <- read_tsv('FC_N013.tabular_parsed.tab')
 
-amrResults <- read_csv('noelle/AMR/amr_new_dataframe_ROP.csv')
+#amrResults <- read_csv('noelle/AMR/amr_new_dataframe_ROP.csv')
 
-krakenResults <- read_csv('noelle/Kraken/kraken_new_dataframe.csv')
+#krakenResults <- read_csv('noelle/Kraken/kraken_new_dataframe.csv')
+
+
+# Get the names of the files that we want to process
+# TODO: Need to add a column with sample name to the Coverage Sampler output
+
+amrResultsFiles <- Sys.glob(file.path("~",
+                                      "amr",
+                                      "2-4-8_results",
+                                      "bwa_aln",
+                                      "*",
+                                      "*",
+                                      "*cov_sampler.tabular"))
+
+
+amrResultsNames <- str_split(amrResultsFiles, pattern = "\\/")
+
+amrResultsNames <- amrResultsNames %>% 
+  map(function(x){
+    sample <- x[8]
+    sample
+  })
+
+amrResults <- amrResultsFiles %>%
+  map(read_tsv) %>%
+  set_names(nm=amrResultsNames)
 
 # TODO: If output is generated from Rarefaction Analyzer,
 # see how it can be applied to the analysis of Kraken data, 
