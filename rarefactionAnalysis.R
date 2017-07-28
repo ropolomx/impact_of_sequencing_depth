@@ -25,8 +25,8 @@ source('rarefaction_utility_functions.R')
 #krakenResults <- read_csv('noelle/Kraken/kraken_new_dataframe.csv')
 
 
-# Get the names of the files that we want to process
-# TODO: Need to add a column with sample name to the Coverage Sampler output
+# Get the paths of the files that we want to process
+
 
 amrResultsFiles <- Sys.glob(file.path("~",
                                       "amr",
@@ -37,7 +37,13 @@ amrResultsFiles <- Sys.glob(file.path("~",
                                       "*cov_sampler.tabular"))
 
 
+# Split the path names and extract the sample name only
+
 amrResultsNames <- str_split(amrResultsFiles, pattern = "\\/")
+
+# Extraction of sample name is being done by extracting the 8th element out of each list element.
+
+# TODO: Explore if this can be done with a print statement
 
 amrResultsNames <- amrResultsNames %>% 
   map(function(x){
@@ -45,9 +51,35 @@ amrResultsNames <- amrResultsNames %>%
     sample
   })
 
+amrResultsNames <- unlist(amrResultsNames)
+
+# Let's now read all the Coverage Sampler tabular files
+# We are using readr (read_tsv)
+# We are also using the list of sample names extracted in the previous function
+# to set the names of the list elements
+# This will make life so much easier!
+
 amrResults <- amrResultsFiles %>%
   map(read_tsv) %>%
   set_names(nm=amrResultsNames)
+
+# Need to add a column with sample name to the Coverage Sampler output
+# Also need to add a column with sample depth
+
+#TODO: Attempt to use map2 or pmap
+
+amrArgs <- list(amrResults, amrResultsNames)
+
+amrResults <- amrArgs %>%
+  map2(function(x) {
+   x$Sample <- rep(amrResultsNames, nrow(x))
+   x
+  })
+
+
+# Join all the datasets into one dataframe that will be analyzed
+
+amrResults <- do.call(amrResults, "rbind")
 
 # TODO: If output is generated from Rarefaction Analyzer,
 # see how it can be applied to the analysis of Kraken data, 
