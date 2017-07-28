@@ -5,7 +5,18 @@ output: html_notebook
 
 ## Galaxy workflow 
 
-Merged read files were analyzed using a custom workflow on the Galaxy instance of the National Microbiology Laboratory (Public Health Agency of Canada). The workflow used in this study is largely based on the AmrPlusPlus Galaxy workflow, but it contains modifications. Those modifications include the integration of taxonomical classification in the same workflow, and the ommission of filtering reads vs. host genome.
+The following FASTQ datasets were analyzed with a modified version of the AMRPlusPlus workflow in the Galaxy instance of the Nationtablet_linux_x64_1_16_09_06.shal Microbiology Laboratory (Public Health Agency of Canada). 
+
+1. Forward and reverse reads that were merged from different lanes (full)
+
+2. Forward and reverse FASTQ files of the individual datasets (half)
+
+3. Forward and reverse with half of the individual datasets (quarter)
+
+4. Subsampled sequences with exactly half of individual datasets (quarter-seqtk)
+
+
+The modifications to the workflow include the integration of taxonomical classification (Kraken) in the same workflow, and the ommission of filtering reads vs. host genome.
 
 In general terms, the Galaxy workflow includes the following processes:
 
@@ -27,7 +38,7 @@ Reads were trimmed with Trimmomatic, using the following paramaters:
 ### AMR classification
 
 The reads resulting after trimming were mapped vs. the MEGAREs database v1.01 using the Map with BWA tool in (version 0.7.12.1). Then, the resulting BAM alignment was sorted by coordinates using the X tool, and and then it was converted to SAM format. The SAM file was analyzed with 3 tools: Coverage Sampler, SnipFinder, RarefactionAnalyzer
-  
+
 
 ### Taxonomic classification
 
@@ -35,11 +46,11 @@ Trimmed reads were classified with `kraken` using a database containing bacteria
 
 ## Exploratory and statistical analyses
 
-Kraken reports were processed with custom scripts.
+AMR reports resulting from Coverage Sampler analyses were further processed to add a column with sample name, depth level, and alignment method. Then, all the reports were combined into a single document that was further processed with R.
+
+Kraken reports were read into R using the `readr` package, whitespace was removed, and all reports were combined into a single script.
 
 ### Generation of rarefaction curves
-
-0. Coverage sampler results were parsed with in-house Python script
 
 1. Reshape data to wide format
 
@@ -47,7 +58,7 @@ Kraken reports were processed with custom scripts.
 
 3. Removal of housekeeping genes (AMR) and PhiX (Kraken)
 
-4. Construction of rarefaction curves
+4. Construction of rarefaction curves. In the case of AMRPlusPlus data, the rarefaction curves were built with the results from Rarefaction Analyzer. In the case of Kraken data, the rarefaction curves were built with the results from processing the reads with the `vegan` package of R.
 
     * Plot with `ggplot2`
   
