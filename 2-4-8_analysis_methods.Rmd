@@ -5,7 +5,10 @@ output: html_notebook
 
 ## Galaxy workflow 
 
-The following FASTQ datasets were analyzed with a modified version of the AMRPlusPlus workflow in the Galaxy instance of the Nationtablet_linux_x64_1_16_09_06.shal Microbiology Laboratory (Public Health Agency of Canada). 
+The following FASTQ datasets were analyzed with a modified version of the
+AMRPlusPlus workflow in the Galaxy instance of the
+National Microbiology Laboratory (Public Health
+Agency of Canada). 
 
 1. Forward and reverse reads that were merged from different lanes (full)
 

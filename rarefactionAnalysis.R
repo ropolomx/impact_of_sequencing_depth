@@ -34,7 +34,7 @@ amrResultsFiles <- Sys.glob(file.path("~",
                                       "bwa_aln",
                                       "*",
                                       "*",
-                                      "*cov_sampler.tabular"))
+                                      "*rarefied*.tabular"))
 
 
 # Split the path names and extract the sample name only
