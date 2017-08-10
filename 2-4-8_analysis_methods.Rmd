@@ -7,8 +7,7 @@ output: html_notebook
 
 The following FASTQ datasets were analyzed with a modified version of the
 AMRPlusPlus workflow in the Galaxy instance of the
-National Microbiology Laboratory (Public Health
-Agency of Canada). 
+National Microbiology Laboratory (Public Health Agency of Canada). 
 
 1. Forward and reverse reads that were merged from different lanes (full)
 
@@ -19,9 +18,11 @@ Agency of Canada).
 4. Subsampled sequences with exactly half of individual datasets (quarter-seqtk)
 
 
-The modifications to the workflow include the integration of taxonomical classification (Kraken) in the same workflow, and the ommission of filtering reads vs. host genome.
+The modifications to the AMRPlusPlus include the integration of taxonomical
+classification (Kraken) in the same workflow, and the ommission of filtering
+reads vs. host genome.
 
-In general terms, the Galaxy workflow includes the following processes:
+The Galaxy workflow includes the following processes:
 
 1. __Trimming and quality assessment__
 2. __AMR classification__
@@ -32,7 +33,8 @@ In this document, the statistical analyses will also be discussed.
 ### Trimming and quality assessment
 
 Reads were trimmed with Trimmomatic, using the following paramaters:
-    * ILLUMINACLIP using TruSeq3 paired-end adapters (2:30:10:3)
+    * ILLUMINACLIP trimming searching for TruSeq3 paired-end adapters 
+    (2:30:10:3)
     * Trimmed the leading 3 bases
     * Trimmed the trailing 3 bases
     * Sliding window quality filtering: every four bases, minimum quality= 15
@@ -40,12 +42,19 @@ Reads were trimmed with Trimmomatic, using the following paramaters:
   
 ### AMR classification
 
-The reads resulting after trimming were mapped vs. the MEGAREs database v1.01 using the Map with BWA tool in (version 0.7.12.1). Then, the resulting BAM alignment was sorted by coordinates using the X tool, and and then it was converted to SAM format. The SAM file was analyzed with 3 tools: Coverage Sampler, SnipFinder, RarefactionAnalyzer
+The reads resulting after trimming were mapped vs. the MEGAREs database v1.01
+using the Map with BWA tool in (version 0.7.12.1). Then, the resulting BAM
+alignment was sorted by coordinates using the X tool, and and then it was
+converted to SAM format. The SAM file was analyzed with 3 tools: Coverage
+Sampler, SnipFinder, RarefactionAnalyzer
 
 
 ### Taxonomic classification
 
-Trimmed reads were classified with `kraken` using a database containing bacterial, virual, fungal, protozoal and archaeal genomes. Classified reads were then filtered with `kraken-filter` (score = 20). Finally, a report of the taxonomic classification was generated with `kraken-report`.
+Trimmed reads were classified with `kraken` using a database containing
+bacterial, virual, fungal, protozoal and archaeal genomes. Classified reads were
+then filtered with `kraken-filter` (score = 20). Finally, a report of the
+taxonomic classification was generated with `kraken-report`.
 
 ## Exploratory and statistical analyses
 
