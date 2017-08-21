@@ -18,15 +18,9 @@ source('rarefaction_utility_functions.R')
 
 # Read AMR and Kraken data
 
-#amrResults <- read_tsv('FC_N013.tabular_parsed.tab')
-
-#amrResults <- read_csv('noelle/AMR/amr_new_dataframe_ROP.csv')
-
-#krakenResults <- read_csv('noelle/Kraken/kraken_new_dataframe.csv')
-
-
 # Get the paths of the files that we want to process
 
+# Update path accordingly
 
 amrResultsFiles <- Sys.glob(file.path("~",
                                       "amr",
@@ -34,7 +28,7 @@ amrResultsFiles <- Sys.glob(file.path("~",
                                       "bwa_aln",
                                       "*",
                                       "*",
-                                      "*rarefied*.tabular"))
+                                      "*rarefied*.tab*"))
 
 
 # Split the path names and extract the sample name only
