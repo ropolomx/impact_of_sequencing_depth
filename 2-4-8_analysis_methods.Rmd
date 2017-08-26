@@ -22,32 +22,6 @@ The modifications to the AMRPlusPlus include the integration of taxonomical
 classification (Kraken) in the same workflow, and the ommission of filtering
 reads vs. host genome.
 
-The Galaxy workflow includes the following processes:
-
-1. __Trimming and quality assessment__
-2. __AMR classification__
-3. __Taxonomic classification__
-
-In this document, the statistical analyses will also be discussed.
-
-### Trimming and quality assessment
-
-Reads were trimmed with Trimmomatic, using the following paramaters:
-    * ILLUMINACLIP trimming searching for TruSeq3 paired-end adapters 
-    (2:30:10:3)
-    * Trimmed the leading 3 bases
-    * Trimmed the trailing 3 bases
-    * Sliding window quality filtering: every four bases, minimum quality= 15
-    * Kept reads with a length of at least 36 bases after trimming
-  
-### AMR classification
-
-The reads resulting after trimming were mapped vs. the MEGAREs database v1.01
-using the Map with BWA tool in (version 0.7.12.1). Then, the resulting BAM
-alignment was sorted by coordinates using the X tool, and and then it was
-converted to SAM format. The SAM file was analyzed with 3 tools: Coverage
-Sampler, SnipFinder, RarefactionAnalyzer
-
 
 ### Taxonomic classification
 

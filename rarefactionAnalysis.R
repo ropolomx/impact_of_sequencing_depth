@@ -20,20 +20,37 @@ source('rarefaction_utility_functions.R')
 
 # Get the paths of the files that we want to process
 
+# Try to fix the code below if reading and concatenating all
+# rarefaction files with R
+
+# However, it can be done much more easily with Python-Pandas
+
+amrRarefiedConcat <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/Results_Aug2017_75_gene_frac/rarefiedConcat.csv')
+
+# Need to fix the halves
+
+fixSampleName <- amrRarefiedDF[amrRarefiedDF$Sample %in% c("H_006", "H_007", "H_008"),]
+
+fixSampleName$Sample <- str_extract(fixSampleName$SampleName, "H_00[6-8]_\\w{4}")
+
+amrRarefiedDF <- amrRarefiedDF %>% filter(!Sample %in% c("H_006", "H_007", "H_008"))
+
+amrRarefied <- rbind(amrRarefiedDF, fixSampleName)
+
 # Update path accordingly
 
-amrResultsFiles <- Sys.glob(file.path("~",
+amrRarefiedFiles <- Sys.glob(file.path("~",
                                       "amr",
                                       "2-4-8_results",
-                                      "bwa_aln",
-                                      "*",
+                                      "2_4_8_study_RZ",
+                                      "Results_Aug2017_75_gene_frac",
                                       "*",
                                       "*rarefied*.tab*"))
 
 
 # Split the path names and extract the sample name only
 
-amrResultsNames <- str_split(amrResultsFiles, pattern = "\\/")
+amrResultsNames <- str_split(amrRarefiedFiles, pattern = "\\/")
 
 # Extraction of sample name is being done by extracting the 8th element out of each list element.
 
@@ -41,8 +58,27 @@ amrResultsNames <- str_split(amrResultsFiles, pattern = "\\/")
 
 amrResultsNames <- amrResultsNames %>% 
   map(function(x){
-    sample <- x[8]
-    sample
+    filename <- x[9]
+  })
+
+# Split filename strings by dot character. Exclude extension.
+
+amrResultsNames <- amrResultsNames %>%
+  map(function(x){
+   rarSampleName <- str_split(x, pattern="\\.")
+   rarSampleName
+  })
+
+# Remove one level of hierarchy to list
+
+amrResultsNames <- flatten(amrResultsNames)
+
+# Extract only first element (sample name and AMR level)
+
+amrResultsNames <- amrResultsNames %>%
+  map(function(x){
+    x <- x[1]
+    x
   })
 
 amrResultsNames <- unlist(amrResultsNames)
@@ -53,8 +89,8 @@ amrResultsNames <- unlist(amrResultsNames)
 # to set the names of the list elements
 # This will make life so much easier!
 
-amrResults <- amrResultsFiles %>%
-  map(read_tsv) %>%
+amrResults <- amrRarefiedFiles %>%
+  map(read_tsv, col_names = c("Sample", "Counts")) %>%
   set_names(nm=amrResultsNames)
 
 # Need to add a column with sample name to the Coverage Sampler output

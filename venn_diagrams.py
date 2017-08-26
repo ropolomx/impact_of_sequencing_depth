@@ -1,17 +1,25 @@
 #! /usr/bin/env python3
 
 import pandas as pd
+from matplotlib_venn import venn3_unweighted
 
-kraken['SampleName'] = kraken['Sample'].str.split('_').str[0]+'_'+kraken['Sample'].str.split('_').str[1]
+def prepare_kraken(kraken):
 
-kraken['Type'] = kraken['SampleName'].str.split('_').str[1]
+    kraken['SampleName'] = kraken['Sample'].str.split('_').str[0]+'_'+kraken['Sample'].str.split('_').str[1]
 
-kraken['Type'] = kraken['Type'].str.replace('2','')
+    kraken['Type'] = kraken['SampleName'].str.split('_').str[1]
 
-kraken[kraken['Kraken.ID'] == 374840]
+    kraken['Type'] = kraken['Type'].str.replace('2','')
 
-kraken = kraken.drop(kraken['Kraken.ID'] == 10842)
-kraken = kraken.drop(kraken['Kraken.ID'] == 10841)
+    kraken[kraken['Kraken.ID'] == 374840]
+
+    # Remove phiX and microviridae reads
+
+    kraken = kraken.drop(kraken['Kraken.ID'] == 374840)
+    kraken = kraken.drop(kraken['Kraken.ID'] == 10842)
+    kraken = kraken.drop(kraken['Kraken.ID'] == 10841)
+
+# Remove
 
 def categoryDiffKraken(category):
     full = kraken.loc[(kraken['Level.of.Classification'] == category) & (kraken['Type'] =="D1"), "Name"]
@@ -27,10 +35,12 @@ def categoryDiffAMR(category):
     full = amrResults[category][amrResults['Sample_type'] == "D1"]
     half = amrResults[category][amrResults['Sample_type'] == "D0.5"]
     quar = amrResults[category][amrResults['Sample_type'] == "D0.25"]
+    seqtk = amrResults[category][amrResults['Sample_type'] == "D0.25_seqtk"]
     setfull = set(full)
     sethalf = set(half)
     setquar = set(quar)
-    return(setfull, sethalf, setquar)
+    setseqtk = set(seqtk)
+    return(setfull, sethalf, setquar, setseqtk)
 
 allCatsSets = {}
 
@@ -94,19 +104,59 @@ plt.savefig('genusVennUpdated2.png')
 plt.clf()
 plt.cla()
 
+# Building AMR Venn diagrams
 
+
+allAMRCatsSets = {}
+
+for c in allAMRCats:
+    allAMRCatsSets[c] = categoryDiffAMR(c)
+
+classFullSet = allAMRCatsSets['Class'][0]
+classHalfSet = allAMRCatsSets['Class'][1]
+classQuarSet = allAMRCatsSets['Class'][2]
+classSeqtkSet = allAMRCatsSets['Class'][3]
+classSets = [classFullSet, classHalfSet, classQuarSet, classSeqtkSet]
+
+mechFullSet = allAMRCatsSets['Mechanism'][0]
+mechHalfSet = allAMRCatsSets['Mechanism'][1]
+mechQuarSet = allAMRCatsSets['Mechanism'][2]
+mechSeqtkSet = allAMRCatsSets['Mechanism'][3]
+mechSets = [mechFullSet, mechHalfSet, mechQuarSet, mechSeqtkSet]
+
+groupFullSet = allAMRCatsSets['Group'][0]
+groupHalfSet = allAMRCatsSets['Group'][1]
+groupQuarSet = allAMRCatsSets['Group'][2]
+groupSeqtkSet = allAMRCatsSets['Group'][3]
+groupSets = [groupFullSet, groupHalfSet, groupQuarSet, groupSeqtkSet]
 
 geneFullSet = allAMRCatsSets['Name'][0]
 geneHalfSet = allAMRCatsSets['Name'][1]
 geneQuarSet = allAMRCatsSets['Name'][2]
-geneSets = [geneFullSet, geneHalfSet, geneQuarSet]
+geneSeqtkSet = allAMRCatsSets['Name'][3]
+geneSets = [geneFullSet, geneHalfSet, geneQuarSet, geneSeqtkSet]
 
-
-v3gene = venn3_unweighted(geneSets, ('D1', 'D0.5', 'D0.25'))
-plt.title('gene')
-plt.savefig('genusVenn.png')
+v3class = venn3_unweighted(classSets[0:2], ('D1', 'D0.5', 'D0.25'))
+plt.title('Class')
+plt.savefig('amrClassVenn.png')
 plt.clf()
 plt.cla()
 
+v3mech = venn3_unweighted(mechSets[0:2], ('D1', 'D0.5', 'D0.25'))
+plt.title('Mech')
+plt.savefig('amrMechVenn.png')
+plt.clf()
+plt.cla()
 
+v3group = venn3_unweighted(groupSets[0:2], ('D1', 'D0.5', 'D0.25'))
+plt.title('Group')
+plt.savefig('amrGroupVenn.png')
+plt.clf()
+plt.cla()
+
+v3gene = venn3_unweighted(geneSets[0:2], ('D1', 'D0.5', 'D0.25'))
+plt.title('Gene')
+plt.savefig('amrGeneVenn.png')
+plt.clf()
+plt.cla()
 
