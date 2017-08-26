@@ -160,3 +160,10 @@ plt.savefig('amrGeneVenn.png')
 plt.clf()
 plt.cla()
 
+
+def setOperations():
+    """Generate a file with all the results of the set operations
+    Ideally return a table with the results"""
+geneAllInter = geneFullSet.intersection(geneHalfSet).intersection(geneQuarSet)
+
+
