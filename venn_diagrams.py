@@ -106,6 +106,7 @@ plt.cla()
 
 # Building AMR Venn diagrams
 
+allAMRCats = ['Class', 'Mechanism', 'Group', 'Name']
 
 allAMRCatsSets = {}
 
@@ -164,6 +165,122 @@ plt.cla()
 def setOperations():
     """Generate a file with all the results of the set operations
     Ideally return a table with the results"""
-geneAllInter = geneFullSet.intersection(geneHalfSet).intersection(geneQuarSet)
+
+geneAllIntersects = geneFullSet.intersection(geneHalfSet).intersection(geneQuarSet)
+geneFullDiffHalf = geneFullSet.difference(geneHalfSet)
+geneFullDiffQuar = geneFullSet.difference(geneQuarSet)
+geneFullInterHalfDiffQuar = geneFullSet.intersection(geneHalfSet).difference(geneQuarSet)
+geneHalfDiffFull = geneHalfSet.difference(geneFullSet)
+geneHalfDiffQuar = geneHalfSet.difference(geneQuarSet)
+geneHalfInterQuarDiffFull = geneHalfSet.intersection(geneFullSet).difference(geneFullSet)
+geneQuarDiffFull = geneQuarSet.difference(geneFullSet)
+geneQuarDiffHalf = geneQuarSet.difference(geneHalfSet)
+geneQuarInterFullDiffHalf = geneQuarSet.intersection(geneFullSet).difference(geneHalfSet)
+
+
+classAllIntersects = classFullSet.intersection(classHalfSet).intersection(classQuarSet)
+classFullDiffHalf = classFullSet.difference(classHalfSet)
+classFullDiffQuar = classFullSet.difference(classQuarSet)
+classFullInterHalfDiffQuar = classFullSet.intersection(classHalfSet).difference(classQuarSet)
+classHalfDiffFull = classHalfSet.difference(classFullSet)
+classHalfDiffQuar = classHalfSet.difference(classQuarSet)
+classHalfInterQuarDiffFull = classHalfSet.intersection(classFullSet).difference(classFullSet)
+classQuarDiffFull = classQuarSet.difference(classFullSet)
+classQuarDiffHalf = classQuarSet.difference(classHalfSet)
+classQuarInterFullDiffHalf = classQuarSet.intersection(classFullSet).difference(classHalfSet)
+
+
+groupAllIntersects = groupFullSet.intersection(groupHalfSet).intersection(groupQuarSet)
+groupFullDiffHalf = groupFullSet.difference(groupHalfSet)
+groupFullDiffQuar = groupFullSet.difference(groupQuarSet)
+groupFullInterHalfDiffQuar = groupFullSet.intersection(groupHalfSet).difference(groupQuarSet)
+groupHalfDiffFull = groupHalfSet.difference(groupFullSet)
+groupHalfDiffQuar = groupHalfSet.difference(groupQuarSet)
+groupHalfInterQuarDiffFull = groupHalfSet.intersection(groupFullSet).difference(groupFullSet)
+groupQuarDiffFull = groupQuarSet.difference(groupFullSet)
+groupQuarDiffHalf = groupQuarSet.difference(groupHalfSet)
+groupQuarInterFullDiffHalf = groupQuarSet.intersection(groupFullSet).difference(groupHalfSet)
+
+
+mechAllIntersects = mechFullSet.intersection(mechHalfSet).intersection(mechQuarSet)
+mechFullDiffHalf = mechFullSet.difference(mechHalfSet)
+mechFullDiffQuar = mechFullSet.difference(mechQuarSet)
+mechFullInterHalfDiffQuar = mechFullSet.intersection(mechHalfSet).difference(mechQuarSet)
+mechHalfDiffFull = mechHalfSet.difference(mechFullSet)
+mechHalfDiffQuar = mechHalfSet.difference(mechQuarSet)
+mechHalfInterQuarDiffFull = mechHalfSet.intersection(mechFullSet).difference(mechFullSet)
+mechQuarDiffFull = mechQuarSet.difference(mechFullSet)
+mechQuarDiffHalf = mechQuarSet.difference(mechHalfSet)
+mechQuarInterFullDiffHalf = mechQuarSet.intersection(mechFullSet).difference(mechHalfSet)
+
+geneSets = [geneAllIntersects,
+geneFullDiffHalf,
+geneFullDiffQuar,
+geneFullInterHalfDiffQuar,
+geneHalfDiffFull,
+geneHalfDiffQuar,
+geneHalfInterQuarDiffFull,
+geneQuarDiffFull,
+geneQuarDiffHalf,
+geneQuarInterFullDiffHalf]
+
+classSets = [classAllIntersects,
+classFullDiffHalf,
+classFullDiffQuar,
+classFullInterHalfDiffQuar,
+classHalfDiffFull,
+classHalfDiffQuar,
+classHalfInterQuarDiffFull,
+classQuarDiffFull,
+classQuarDiffHalf,
+classQuarInterFullDiffHalf]
+
+mechSets = [mechAllIntersects,
+mechFullDiffHalf,
+mechFullDiffQuar,
+mechFullInterHalfDiffQuar,
+mechHalfDiffFull,
+mechHalfDiffQuar,
+mechHalfInterQuarDiffFull,
+mechQuarDiffFull,
+mechQuarDiffHalf,
+mechQuarInterFullDiffHalf]
+
+groupSets = [groupAllIntersects,
+groupFullDiffHalf,
+groupFullDiffQuar,
+groupFullInterHalfDiffQuar,
+groupHalfDiffFull,
+groupHalfDiffQuar,
+groupHalfInterQuarDiffFull,
+groupQuarDiffFull,
+groupQuarDiffHalf,
+groupQuarInterFullDiffHalf]
+
+
+geneSetLengths = [len(g) for g in geneSets]
+classSetLengths = [len(c) for c in classSets]
+mechSetLengths = [len(m) for m in mechSets]
+groupSetLengths = [len(g) for g in groupSets]
+
+geneLists = [list(g) for g in geneSets]
+classLists = [list(c) for c in classSets]
+mechLists = [list(m) for m in mechSets]
+groupLists = [list(g) for g in groupSets]
+
+amrGeneSetOperationsTuple = zip(setOperationKeys, geneSetLengths, geneLists)
+amrClassSetOperationsTuple = zip(setOperationKeys, classSetLengths, classLists)
+amrMechSetOperationsTuple = zip(setOperationKeys, mechSetLengths, mechLists)
+amrGroupSetOperationsTuple = zip(setOperationKeys, groupSetLengths, groupLists)
+
+amrGeneUniqueDF = pd.DataFrame.from_records(amrGeneSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
+amrClassUniqueDF = pd.DataFrame.from_records(amrClassSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
+amrMechUniqueDF = pd.DataFrame.from_records(amrMechSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
+amrGroupUniqueDF = pd.DataFrame.from_records(amrGroupSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
+
+amrGeneUniqueDF.to_csv('amrGeneSetOperations.csv', index = False)
+amrClassUniqueDF.to_csv('amrClassSetOperations.csv', index = False)
+amrMechUniqueDF.to_csv('amrMechSetOperations.csv', index = False)
+amrGroupUniqueDF.to_csv('amrGroupSetOperations.csv', index = False)
 
 
