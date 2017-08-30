@@ -25,7 +25,16 @@ source('rarefaction_utility_functions.R')
 
 # However, it can be done much more easily with Python-Pandas
 
-amrRarefiedConcat <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/Results_Aug2017_75_gene_frac/rarefiedConcat.csv')
+amrRarefiedConcat <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefiedConcat.csv')
+
+amrFiltered <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/cov_sampler_parsed/amrFiltered_75_genefrac.csv')
+
+# Remove seqtk data from dataframe
+
+amrFiltered <- amrFiltered %>% filter(Sample_type != "D0.25_seqtk")
+
+# Steps below are for further data cleaning. This might not be needed if the 
+# dataset is already filtered.
 
 # Need to fix the halves
 
@@ -150,24 +159,30 @@ amrResultsTidy <- amrResultsTidy %>%
 # Vectors containing amr Levels and taxon levels to analyze
 #amrLevels <- c("Class", "Mechanism", "Group", "Gene Id")
 
-amrResultsTidy$Level <- factor(amrResultsTidy$Level, 
-                               levels = c('Class', 'Mechanism', 'Group', 'Name'))
+# Start here if AMR results have been filtered already
 
-amrLevels <- levels(amrResultsTidy$Level)
+# Tidy the dataset
 
-taxonLevels <- c("D", "K", "C", "O", "F", "G", "S", "-")
+amrResultsTidy <- amrFiltered %>% 
+  gather(Category, CategoryName, c(1:4))
 
+amrResultsTidy$Category <- factor(amrResultsTidy$Category, 
+                               levels = c('Class', 'Mechanism', 'Group', 'Gene'))
+
+amrCategories <- levels(amrResultsTidy$Category)
+
+#taxonLevels <- c("D", "K", "C", "O", "F", "G", "S", "-")
 
 # Split tidy data frame of AMR results according to the Level vector
 
 amrResultsList <- amrResultsTidy %>% 
-  split(.$Level) %>% #splitting dataframe using base R but with purrr's piping
-  set_names(nm=amrLevels)
+  split(.$Category) %>% #splitting dataframe using base R but with purrr's piping
+  set_names(nm=amrCategories)
 
-# Summarize results: add counts by Sample and AMR Level
+# Summarize results: calculate mean by Depth
 
 amrResultsSummary <- lapply(amrResultsList, function(x){
-  summarizeAMRbySample(x)
+  summarizeAMRbyDepth(x)
 })
 
 # Convert AMR results to wide format
@@ -275,3 +290,56 @@ amrRarefyDF <- do.call("rbind", amrRarefyDF)
 amrRarefyDF$AMRLevel <- row.names(amrRarefyDF)
 amrRarefyDF$AMRLevel <- str_extract(amrRarefyDF$AMRLevel, "^\\w+")
 
+# Plot rarefaction curves using Rarefaction Analyzer data
+
+# Slice dataset by AMR level
+
+# Remove seqtk data (not needed for now)
+
+amrRarefiedConcat <- amrRarefiedConcat %>%
+  filter(Depth != "seqtk")
+
+amrRarefiedConcat$Depth <- str_replace(amrRarefiedConcat$Depth, 'half[1-2]', 'half')
+
+amrRarefiedMean <- amrRarefiedConcat %>%
+  group_by(Depth,PercentSampling, Level) %>%
+  summarise(MeanCounts = mean(Counts))
+
+amrRarefiedClass <- amrRarefiedMean[amrRarefiedMean$Level == "class",]
+
+amrRarefiedMechanism <- amrRarefiedConcat[amrRarefiedConcat$Level == "mechanism",]
+
+amrRarefiedGroup <- amrRarefiedConcat[amrRarefiedConcat$Level == "group",] 
+  
+amrRarefiedGene <- amrRarefiedConcat[amrRarefiedConcat$Level == "gene",]
+
+
+amrClassRarCurve <- amrRarefiedClass %>% 
+  ggplot(aes(PercentSampling, Counts, color=Depth)) + 
+  geom_line() + 
+  scale_x_continuous(breaks=seq(5, 100, 5)) +
+  facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
+
+amrClassMeanCurve <- amrRarefiedClass %>% 
+  ggplot(aes(PercentSampling, MeanCounts, color=Depth)) + 
+  geom_line() + 
+  scale_x_continuous(breaks=seq(5, 100, 5))
+  #facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
+
+amrMechanismRarCurve <- amrRarefiedMechanism %>% 
+  ggplot(aes(PercentSampling, Counts, color=Depth)) + 
+  geom_line() + 
+  scale_x_continuous(breaks=seq(5, 100, 5)) +
+  facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
+
+amrGroupRarCurve <- amrRarefiedGroup %>% 
+  ggplot(aes(PercentSampling, Counts, color=Depth)) + 
+  geom_line() + 
+  scale_x_continuous(breaks=seq(5, 100, 5)) +
+  facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
+
+amrGeneRarCurve <- amrRarefiedGene %>% 
+  ggplot(aes(PercentSampling, Counts, color=Depth)) + 
+  geom_line() + 
+  scale_x_continuous(breaks=seq(5, 100, 5)) +
+  facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")

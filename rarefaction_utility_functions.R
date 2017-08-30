@@ -32,6 +32,24 @@ summarizeAMRbySample <- function(X) {
     summarise(Hits=sum(Hits_Seen))
   return(amrResultsSummarised)
 }
+
+#' Summarize by depth
+#'
+#' @param X 
+#'
+#' @return
+#' @export
+#'
+#' @examples Summarized results of \code{X} by sample depth
+ 
+summarizeAMRbyDepth <- function(X) {
+  amrResultsSummarised <- X %>% 
+    group_by_('Sample_type', 'SampleID') %>% 
+    summarise(MeanHits=mean(Hits))
+  return(amrResultsSummarised)
+}
+
+
   
 #' Title
 #'
@@ -44,7 +62,7 @@ summarizeAMRbySample <- function(X) {
 
 widenAMR <- function(summarizedAMR) {
   amrLevelWide <- summarizedAMR %>% 
-    spread('Sample', 'Hits', fill = 0)
+    spread_('SampleID', 'MeanHits', fill = 0)
   return(amrLevelWide)
 }
 
