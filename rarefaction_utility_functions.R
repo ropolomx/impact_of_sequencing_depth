@@ -49,7 +49,21 @@ summarizeAMRbyDepth <- function(X) {
   return(amrResultsSummarised)
 }
 
-
+#' Summarize by depth
+#'
+#' @param X 
+#'
+#' @return
+#' @export
+#'
+#' @examples Summarized results of \code{X} by sample depth
+ 
+summarizeKrakenbyDepth <- function(X) {
+  krakenResultsSummarised <- X %>% 
+    group_by_('Sample', 'TaxID') %>% 
+    summarise(SumHits=sum(CladeReads))
+  return(krakenResultsSummarised)
+}
   
 #' Title
 #'
@@ -68,6 +82,21 @@ widenAMR <- function(summarizedAMR) {
 
 #' Title
 #'
+#' @param summarizedKraken
+#'
+#' @return
+#' @export
+#'
+#' @examples
+
+widenKraken <- function(summarizedKraken) {
+  krakenLevelWide <- summarizedKraken %>% 
+    spread_('Sample', 'MeanHits', fill = 0)
+  return(krakenLevelWide)
+}
+
+#' Title
+#'
 #' @param amrLevelWide 
 #'
 #' @return
@@ -80,7 +109,21 @@ matrixAMR <- function(amrLevelWide) {
   row.names(amrLevelMat) <- row.names(amrLevelWide)
   return(amrLevelMat)
 }
-
+#' Title
+#'
+#' @param krakenLevelWide 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' 
+#' 
+matrixKraken <- function(krakenLevelWide) {
+  krakenLevelMat <- krakenLevelWide[,c(2:33)]
+  row.names(krakenLevelMat) <- krakenLevelWide$TaxID
+  return(krakenLevelMat)
+}
 
 #' Title
 #'

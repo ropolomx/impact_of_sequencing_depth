@@ -18,20 +18,30 @@ source('rarefaction_utility_functions.R')
 
 # Read AMR and Kraken data
 
-# Get the paths of the files that we want to process
+# Datasets were concatenated with Python-Pandas
 
-# Try to fix the code below if reading and concatenating all
-# rarefaction files with R
-
-# However, it can be done much more easily with Python-Pandas
+# Results generated with Rarefaction Analyzer
 
 amrRarefiedConcat <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefiedConcat.csv')
 
-amrFiltered <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/cov_sampler_parsed/amrFiltered_75_genefrac.csv')
+# Results generated with Coverage Sampler and filtered with Python-Pandas
+# Filtering involved keeping results with gene fraction >= 75% and 
+# removing all those results with genes that require SNP confirmation.
 
-# Remove seqtk data from dataframe
+amrResultsFiltered <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/cov_sampler_parsed/amrFiltered_75_genefrac.csv')
 
-amrFiltered <- amrFiltered %>% filter(Sample_type != "D0.25_seqtk")
+# Remove D0.25_seqtk data from filtered data frame
+
+amrResultsFiltered <- amrResultsFiltered %>% filter(Sample_type != "D0.25_seqtk")
+
+# Replace "Name" with "Gene" in headers of the filtered data frame
+
+names(amrResultsFiltered) <- str_replace(names(amrResultsFiltered), "Name", "Gene")
+
+
+# Read Kraken concatenated and filtered file (no Eukaryotes, and no PhiX)
+
+krakenResultsFiltered <- read.table('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/allKraken_FHQ/kraken_filtered/krakenConcat.tsv', sep="\t", header=TRUE)
 
 # Steps below are for further data cleaning. This might not be needed if the 
 # dataset is already filtered.
@@ -49,12 +59,12 @@ amrRarefied <- rbind(amrRarefiedDF, fixSampleName)
 # Update path accordingly
 
 amrRarefiedFiles <- Sys.glob(file.path("~",
-                                      "amr",
-                                      "2-4-8_results",
-                                      "2_4_8_study_RZ",
-                                      "Results_Aug2017_75_gene_frac",
-                                      "*",
-                                      "*rarefied*.tab*"))
+                                       "amr",
+                                       "2-4-8_results",
+                                       "2_4_8_study_RZ",
+                                       "Results_Aug2017_75_gene_frac",
+                                       "*",
+                                       "*rarefied*.tab*"))
 
 
 # Split the path names and extract the sample name only
@@ -74,8 +84,8 @@ amrResultsNames <- amrResultsNames %>%
 
 amrResultsNames <- amrResultsNames %>%
   map(function(x){
-   rarSampleName <- str_split(x, pattern="\\.")
-   rarSampleName
+    rarSampleName <- str_split(x, pattern="\\.")
+    rarSampleName
   })
 
 # Remove one level of hierarchy to list
@@ -111,8 +121,8 @@ amrArgs <- list(amrResults, amrResultsNames)
 
 amrResults <- amrArgs %>%
   map2(function(x) {
-   x$Sample <- rep(amrResultsNames, nrow(x))
-   x
+    x$Sample <- rep(amrResultsNames, nrow(x))
+    x
   })
 
 
@@ -127,7 +137,7 @@ amrResults <- do.call(amrResults, "rbind")
 # Convert AMR results to "tidy" format
 # Kraken table is already in tidy format.
 
-amrResultsTidy <- amrResults %>% 
+amrResultsTidy <- amrResultsFiltered %>% 
   gather(Level, LevelName, c(1,6:8))
 
 # Change the names of the AMR sequencing depths columns
@@ -159,17 +169,22 @@ amrResultsTidy <- amrResultsTidy %>%
 # Vectors containing amr Levels and taxon levels to analyze
 #amrLevels <- c("Class", "Mechanism", "Group", "Gene Id")
 
+#### Starting with Filtered data ####
+
 # Start here if AMR results have been filtered already
 
 # Tidy the dataset
 
-amrResultsTidy <- amrFiltered %>% 
+amrResultsTidy <- amrResultsFiltered %>% 
   gather(Category, CategoryName, c(1:4))
 
 amrResultsTidy$Category <- factor(amrResultsTidy$Category, 
-                               levels = c('Class', 'Mechanism', 'Group', 'Gene'))
+                                  levels = c('Class', 'Mechanism', 'Group', 'Gene'))
+
 
 amrCategories <- levels(amrResultsTidy$Category)
+
+krakenTaxa <- levels(krakenResultsFiltered$TaxRank)
 
 #taxonLevels <- c("D", "K", "C", "O", "F", "G", "S", "-")
 
@@ -179,10 +194,17 @@ amrResultsList <- amrResultsTidy %>%
   split(.$Category) %>% #splitting dataframe using base R but with purrr's piping
   set_names(nm=amrCategories)
 
+krakenResultsList <- krakenResultsFiltered %>% 
+  split(.$TaxRank) %>% #splitting dataframe using base R but with purrr's piping
+  set_names(nm=krakenTaxa)
 # Summarize results: calculate mean by Depth
 
 amrResultsSummary <- lapply(amrResultsList, function(x){
   summarizeAMRbyDepth(x)
+})
+
+krakenResultsSummary <- lapply(krakenResultsList, function(x){
+  summarizeKrakenbyDepth(x)
 })
 
 # Convert AMR results to wide format
@@ -191,12 +213,21 @@ amrResultsWide <- lapply(amrResultsSummary, function(x){
   widenAMR(x)
 })
 
+
+krakenResultsWide <- lapply(krakenResultsSummary, function(x){
+  widenKraken(x)
+})
+
 # Convert AMR results from wide format to matrix
 
 amrResultsMat <- lapply(amrResultsWide, function(x){
   matrixAMR(x)
 })
 
+
+krakenResultsMat <- lapply(krakenResultsWide, function(x){
+  matrixKraken(x)
+})
 
 # Transpose matrices
 # Awesome!!!
@@ -207,6 +238,11 @@ amrResultsMat <- lapply(amrResultsMat, function(x){
   
 })
 
+krakenResultsMat <- lapply(krakenResultsMat, function(x){
+  
+  t(x)
+  
+})
 # Example: one specific rarefaction curve
 
 #rarec(amrResultsMat[['Name']], 
@@ -230,6 +266,17 @@ amrRarefy <- mclapply(amrResultsMat, function(x){
   raremax <- min(rowSums(x))
   rarecurve(x, step=5, sample=raremax)
 },mc.cores=3)
+
+krakenSpeciesRichness <- mclapply(krakenResultsMat, function(x){
+  raremax <- min(rowSums(x))
+  Trare <- rarefy(x, sample=raremax)
+  return(Trare)
+},mc.cores=10)
+
+krakenRarCurve <- mclapply(krakenResultsMat, function(x){
+  raremax <- min(rowSums(x))
+  rarecurve(x, step=1000, sample=raremax, se=TRUE)
+},mc.cores=10)
 
 # Use microbenchmark to compare between the two approaches
 
@@ -256,11 +303,14 @@ amrRarefy <- mclapply(amrResultsMat, function(x){
 
 samples <- rownames(amrResultsMat[["Class"]])
 
+krakenSamples <- rownames(krakenResultsMat[["D"]])
+
 # Review syntax here
 # Might need to add function to utility function list
 
 amrRarefy <- mclapply(amrRarefy, function(x) set_names(x,samples), mc.cores=3)
 
+krakenRarCurve <- mclapply(krakenRarCurve, function(x) set_names(x,krakenSamples), mc.cores=10)
 # Generate list of dataframes
 # Hacky, but it works. Need to make it cleaner and faster.
 
@@ -268,6 +318,11 @@ amrRarefy <- amrRarefy %>%
   map(as_vector)
 
 amrRarefyDF <- map(amrRarefy, function(x) as_tibble(x, attr(x, "names")))
+
+krakenRarCurve <- krakenRarCurve %>% 
+  map(as_vector)
+
+krakenRarefyDF <- map(krakenRarCurve, function(x) as_tibble(x, attr(x, "names")))
 
 # Split rownames in order to generate columns with useful information
 
@@ -284,11 +339,34 @@ amrRarefyDF <- mclapply(amrRarefyDF, function(x) {
 mc.cores=3
 )
 
+krakenRarefyDF <- mclapply(krakenRarefyDF, function(x) {
+  x$Sample <- row.names(x)
+  x$Subsample <- str_extract(x$Sample, "\\.N\\d+")
+  x$Subsample <- as.numeric(str_replace(x$Subsample, "N",""))
+  x$Depth <- str_replace(x$Sample, "_.*", "")
+  x$SampleID <- str_extract(x$Sample, "_.*\\.")
+  x$SampleID <- str_replace(x$SampleID, "_", "")
+  x$SampleID <- str_replace(x$SampleID, "\\.", "")
+  x$Sample <- str_replace(x$Sample, "\\.N.*$", "")
+  x
+}, 
+mc.cores=10
+)
+
 # Generate one single dataframe and create column for AMR Level
 
 amrRarefyDF <- do.call("rbind", amrRarefyDF)
 amrRarefyDF$AMRLevel <- row.names(amrRarefyDF)
 amrRarefyDF$AMRLevel <- str_extract(amrRarefyDF$AMRLevel, "^\\w+")
+
+krakenRarefyDF <- do.call("rbind", krakenRarefyDF)
+krakenRarefyDF$krakenLevel <- row.names(krakenRarefyDF)
+krakenRarefyDF$krakenLevel <- str_extract(krakenRarefyDF$krakenLevel, "^.\\.")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "\\.", "")
+krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "F", "D1")
+krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "H", "D0.5")
+krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "QD", "D0.25")
+
 
 # Plot rarefaction curves using Rarefaction Analyzer data
 
@@ -343,3 +421,97 @@ amrGeneRarCurve <- amrRarefiedGene %>%
   geom_line() + 
   scale_x_continuous(breaks=seq(5, 100, 5)) +
   facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
+
+
+# Plot aggregated rarefaction curves
+
+krakenRarefiedMean <- krakenRarefyDF %>%
+  group_by(Depth,Subsample, krakenLevel) %>%
+  summarise(MeanCounts = mean(value))
+
+krakenRarPhylum <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "P",]
+krakenRarClass <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "C",]
+krakenRarOrder <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "O",]
+krakenRarFamily <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "F",]
+krakenRarGenus <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "G",]
+krakenRarSpecies <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "S",]
+
+krakenAllPhylum <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "P",]
+krakenAllClass <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "C",]
+krakenAllOrder <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "O",]
+krakenAllFamily <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "F",]
+krakenAllGenus <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "G",]
+krakenAllSpecies <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "S",]
+
+vennPalette <- c("#F8766D", "#00BA38", "#619CFF")
+vennPalette <- rev(vennPalette)
+
+# Write a function!!!
+
+# Make all of this functional programming!!!
+
+krakenAllPhylumRarCurve <- krakenAllPhylum %>%
+  ggplot(aes(Subsample, value, color=Depth)) +
+  geom_point(alpha=0.6) + 
+  xlab = 
+  scale_fill_manual(c(vennPalette))
+  
+krakenPhylumFacet <- krakenAllPhylumRarCurve + 
+  facet_grid(. ~ Depth)
+
+krakenAllClassRarCurve <- krakenAllClass %>%
+  ggplot(aes(Subsample, value, color=Depth)) +
+  geom_point(alpha=0.6) +
+  scale_fill_manual(c(vennPalette))
+
+krakenAllOrderRarCurve <- krakenAllOrder %>%
+  ggplot(aes(Subsample, value, color=Depth)) +
+  geom_point(alpha=0.7) +
+
+krakenAllFamilyRarCurve <- krakenAllFamily %>%
+  ggplot(aes(Subsample, value, color=Depth)) +
+  geom_point(alpha=0.7) +
+
+krakenAllGenusRarCurve <- krakenAllGenus %>%
+  ggplot(aes(Subsample, value, color=Depth)) +
+  geom_point(alpha=0.7) +
+
+krakenAllSpeciesRarCurve <- krakenAllSpecies %>%
+  ggplot(aes(Subsample, value, color=Depth)) +
+  geom_point(alpha=0.7) +
+
+
+
+
+# Mean plots
+
+krakenPhylumRarCurve <- krakenRarPhylum %>% 
+  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
+  geom_line() +
+  facet_grid(. ~ Depth)
+
+krakenClassRarCurve <- krakenRarClass %>% 
+  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
+  geom_line() +
+  facet_grid(. ~ Depth)
+
+krakenOrderRarCurve <- krakenRarOrder %>% 
+  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
+  geom_line() +
+  facet_grid(. ~ Depth)
+
+krakenFamilyRarCurve <- krakenRarFamily %>% 
+  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
+  geom_line() +
+  facet_grid(. ~ Depth)
+
+krakenGenusRarCurve <- krakenRarGenus %>% 
+  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
+  geom_line() +
+  facet_grid(. ~ Depth)
+
+krakenSpeciesRarCurve <- krakenRarSpecies %>% 
+  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
+  geom_point() +
+  scale_y_continuous(breaks=seq(0, 2500, 250)) +
+  facet_grid(. ~ Depth)

@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import pandas as pd
+from pandas import ExcelWriter
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn3_unweighted
 
@@ -303,6 +304,55 @@ amrClassUniqueDF.to_csv('amrClassSetOperations.csv', index = False)
 amrMechUniqueDF.to_csv('amrMechSetOperations.csv', index = False)
 amrGroupUniqueDF.to_csv('amrGroupSetOperations.csv', index = False)
 
+allClassComps = []
+allMechanismComps = []
+allGroupComps = []
+allGeneComps = []
+
+for c in classLists:
+    allClassComps.append(krakenConcat[krakenConcat['Name'].isin(c)])
+
+for m in mechSetLists:
+    allOrderComps.append(krakenConcat[krakenConcat['Name'].isin(o)])
+
+for g in groupLists:
+    allFamilyComps.append(krakenConcat[krakenConcat['Name'].isin(f)])
+
+for g in geneLists:
+    allOrderComps.append(krakenConcat[krakenConcat['Name'].isin(o)])
+
+classSlices = zip(setOperationKeys, allClassComps)
+
+mechSlices = zip(setOperationKeys, allMechComps)
+
+groupSlices = zip(setOperationKeys, allGroupComps)
+
+geneSlices = zip(setOperationKeys, allGeneComps)
+
+
+classWriter = ExcelWriter('classComparisons.xlsx')
+mechWriter = ExcelWriter('mechComparisons.xlsx')
+groupWriter = ExcelWriter('groupComparisons.xlsx')
+geneWriter = ExcelWriter('geneComparisons.xlsx')
+
+for n, df in classSlices:
+    df.to_excel(classWriter, sheet_name=n)
+classWriter.save()
+
+for n, df in mechSlices:
+    df.to_excel(mechWriter, sheet_name=n)
+mechWriter.save()
+
+for n, df in groupSlices:
+    df.to_excel(groupWriter, sheet_name=n)
+groupWriter.save()
+
+for n, df in geneSlices:
+    df.to_excel(geneWriter, sheet_name=n)
+geneWriter.save()
+
+# Kraken data analysis
+
 
 def krakenSetOperations():
     """Generate a file with all the results of the set operations
@@ -377,16 +427,16 @@ phylumQuarDiffFull = phylumQuarSet.difference(phylumFullSet)
 phylumQuarDiffHalf = phylumQuarSet.difference(phylumHalfSet)
 phylumQuarInterFullDiffHalf = phylumQuarSet.intersection(phylumFullSet).difference(phylumHalfSet)
 
-PhylumSets = [PhylumAllIntersects,
-PhylumFullDiffHalf,
-PhylumFullDiffQuar,
-PhylumFullInterHalfDiffQuar,
-PhylumHalfDiffFull,
-PhylumHalfDiffQuar,
-PhylumHalfInterQuarDiffFull,
-PhylumQuarDiffFull,
-PhylumQuarDiffHalf,
-PhylumQuarInterFullDiffHalf]
+phylumSets = [phylumAllIntersects,
+phylumFullDiffHalf,
+phylumFullDiffQuar,
+phylumFullInterHalfDiffQuar,
+phylumHalfDiffFull,
+phylumHalfDiffQuar,
+phylumHalfInterQuarDiffFull,
+phylumQuarDiffFull,
+phylumQuarDiffHalf,
+phylumQuarInterFullDiffHalf]
 
 classSets = [classAllIntersects,
 classFullDiffHalf,
@@ -444,7 +494,7 @@ speciesQuarDiffFull,
 speciesQuarDiffHalf,
 speciesQuarInterFullDiffHalf]
 
-phylumSetLength = [len(p) for p in phylumSets]
+phylumSetLengths = [len(p) for p in phylumSets]
 classSetLengths = [len(c) for c in classSets]
 orderSetLengths = [len(o) for o in orderSets]
 familySetLengths = [len(f) for f in familySets]
@@ -452,11 +502,11 @@ genusSetLengths = [len(g) for g in genusSets]
 speciesSetLengths = [len(s) for s in speciesSets]
 
 phylumSetLists = [list(p) for p in phylumSets]
-classSetListss = [list(c) for c in classSets]
-orderSetListss = [list(o) for o in orderSets]
-familySetListss = [list(f) for f in familySets]
-genusSetListss = [list(g) for g in genusSets]
-speciesSetListss = [list(s) for s in speciesSets]
+classSetLists = [list(c) for c in classSets]
+orderSetLists = [list(o) for o in orderSets]
+familySetLists = [list(f) for f in familySets]
+genusSetLists = [list(g) for g in genusSets]
+speciesSetLists = [list(s) for s in speciesSets]
 
 setOperationKeys = ['All_intersections',
         'Full_vs_Half',
@@ -470,12 +520,12 @@ setOperationKeys = ['All_intersections',
         'Quar_and_Full_vs_Half']
 
 
-phylumSetOperationsTuple = zip(setOperationKeys, phylumSetLengths, phylumLists)
-classSetOperationsTuple = zip(setOperationKeys, classSetLengths, classLists)
-orderSetOperationsTuple = zip(setOperationKeys, orderSetLengths, orderLists)
-familySetOperationsTuple = zip(setOperationKeys, familySetLengths, familyLists)
-genusSetOperationsTuple = zip(setOperationKeys, genusSetLengths, genusLists)
-speciesSetOperationsTuple = zip(setOperationKeys, speciesSetLengths, speciesLists)
+phylumSetOperationsTuple = zip(setOperationKeys, phylumSetLengths, phylumSetLists)
+classSetOperationsTuple = zip(setOperationKeys, classSetLengths, classSetLists)
+orderSetOperationsTuple = zip(setOperationKeys, orderSetLengths, orderSetLists)
+familySetOperationsTuple = zip(setOperationKeys, familySetLengths, familySetLists)
+genusSetOperationsTuple = zip(setOperationKeys, genusSetLengths, genusSetLists)
+speciesSetOperationsTuple = zip(setOperationKeys, speciesSetLengths, speciesSetLists)
 
 phylumUniqueDF = pd.DataFrame.from_records(phylumSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
 classUniqueDF = pd.DataFrame.from_records(classSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
@@ -491,4 +541,70 @@ familyUniqueDF.to_csv('familySetOperations.csv', index = False)
 genusUniqueDF.to_csv('genusSetOperations.csv', index = False)
 speciesUniqueDF.to_csv('speciesSetOperations.csv', index = False)
 
+allPhylumComps = []
+allClassComps = []
+allOrderComps = []
+allFamilyComps = []
+allGenusComps = []
+allSpeciesComps = []
 
+for p in phylumSetLists:
+    allPhylumComps.append(krakenConcat[krakenConcat['Name'].isin(p)])
+
+for c in classSetLists:
+    allClassComps.append(krakenConcat[krakenConcat['Name'].isin(c)])
+
+for o in orderSetLists:
+    allOrderComps.append(krakenConcat[krakenConcat['Name'].isin(o)])
+
+for f in familySetLists:
+    allFamilyComps.append(krakenConcat[krakenConcat['Name'].isin(f)])
+
+for g in genusSetLists:
+    allGenusComps.append(krakenConcat[krakenConcat['Name'].isin(g)])
+
+for s in speciesSetLists:
+    allSpeciesComps.append(krakenConcat[krakenConcat['Name'].isin(s)])
+
+phylumSlices = zip(setOperationKeys, allPhylumComps)
+
+classSlices = zip(setOperationKeys, allClassComps)
+
+orderSlices = zip(setOperationKeys, allOrderComps)
+
+familySlices = zip(setOperationKeys, allFamilyComps)
+
+genusSlices = zip(setOperationKeys, allGenusComps)
+
+speciesSlices = zip(setOperationKeys, allSpeciesComps)
+
+phylumWriter = ExcelWriter('phylumComparisons.xlsx')
+classWriter = ExcelWriter('classComparisons.xlsx')
+orderWriter = ExcelWriter('orderComparisons.xlsx')
+familyWriter = ExcelWriter('familyComparisons.xlsx')
+genusWriter = ExcelWriter('genusComparisons.xlsx')
+speciesWriter = ExcelWriter('speciesComparisons.xlsx')
+
+for n, df in phylumSlices:
+    df.to_excel(phylumWriter, sheet_name=n, index=False)
+phylumWriter.save()
+
+for n, df in classSlices:
+    df.to_excel(classWriter, sheet_name=n, index=False)
+classWriter.save()
+
+for n, df in orderSlices:
+    df.to_excel(orderWriter, sheet_name=n, index=False)
+orderWriter.save()
+
+for n, df in familySlices:
+    df.to_excel(familyWriter, sheet_name=n, index=False)
+familyWriter.save()
+
+for n, df in genusSlices:
+    df.to_excel(genusWriter, sheet_name=n, index=False)
+genusWriter.save()
+
+for n, df in speciesSlices:
+    df.to_excel(speciesWriter, sheet_name=n, index=False)
+speciesWriter.save()
