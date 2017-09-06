@@ -1,0 +1,31 @@
+---
+title: "VennDiagrams"
+author: "Rodrigo Ortega Polo"
+date: "August 30, 2017"
+output:
+  word_document: default
+  html_document: default
+bibliography: 2-4-8_library.bib
+---
+
+## Venn diagrams
+
+__AMR__: AMR reports resulting from Coverage Sampler analyses were processed by 
+filtering out those results with a gene fraction less than 75%, and also by 
+filtering out housekeeping genes (genes present in the MEGARes database which 
+require SNP confirmation. The filtered dataset was kept for further analyses.
+Sets of unique taxa at each sequencing depth were obtained for each AMR level
+(class, mechanism, group, gene) using Python 3.4.2. Venn diagrams were plotted using the `matplotlib_venn` package [@tretyakov_matplotlib-venn:_nodate] in Python 3.4.2.
+
+__Microbiome__: 
+
+Results for all Eukaryotes and for Enterobacteria phage phiX174 sensu lato were 
+filtered out from the Kraken reports with Pavian [@breitwieser_pavian:_2016]. 
+Complete taxonomic lineages were also added by Pavian.
+
+Sets of unique taxa at each sequencing depth for each taxonomic level (i.e. 
+phylum, class, family, order, genus, and species) were determined using Python 
+3.4.2. Venn diagrams were plotted using the `matplotlib_venn` package 
+[@tretyakov_matplotlib-venn:_nodate] in Python 3.4.2.
+
+## References
