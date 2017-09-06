@@ -267,16 +267,39 @@ amrRarefy <- mclapply(amrResultsMat, function(x){
   rarecurve(x, step=5, sample=raremax)
 },mc.cores=3)
 
-krakenSpeciesRichness <- mclapply(krakenResultsMat, function(x){
-  raremax <- min(rowSums(x))
-  Trare <- rarefy(x, sample=raremax)
-  return(Trare)
+krakenAlphaDiversity <- mclapply(krakenResultsMat, function(x){
+  AlphaDiv <- diversity(x, index="invsimpson")
+  return(AlphaDiv)
 },mc.cores=10)
 
 krakenRarCurve <- mclapply(krakenResultsMat, function(x){
   raremax <- min(rowSums(x))
-  rarecurve(x, step=1000, sample=raremax, se=TRUE)
+  rarecurve(x, step=1000, sample=raremax)
 },mc.cores=10)
+
+
+krakenAlphaRarefaction <- lapply(krakenResultsMat, function(x){
+  alpha_rarefaction(x, minlevel=0)
+})
+
+krakenAlphaRarefaction <- lapply(krakenAlphaRarefaction, function(x) data.table(ID=names(x$raw_species_abundance), RawSpeciesAbundance=as.numeric(x$raw_species_abundance), RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), AlphaDiv=as.numeric(x$alphadiv)))
+
+
+krakenAlphaRarefaction[[1]]$Level <- rep(krakenTaxa[[1]], length(krakenAlphaRarefaction[[1]]$ID))
+krakenAlphaRarefaction[[2]]$Level <- rep(krakenTaxa[[2]], length(krakenAlphaRarefaction[[2]]$ID))
+krakenAlphaRarefaction[[3]]$Level <- rep(krakenTaxa[[3]], length(krakenAlphaRarefaction[[3]]$ID))
+krakenAlphaRarefaction[[4]]$Level <- rep(krakenTaxa[[4]], length(krakenAlphaRarefaction[[4]]$ID))
+krakenAlphaRarefaction[[5]]$Level <- rep(krakenTaxa[[5]], length(krakenAlphaRarefaction[[5]]$ID))
+krakenAlphaRarefaction[[6]]$Level <- rep(krakenTaxa[[6]], length(krakenAlphaRarefaction[[6]]$ID))
+krakenAlphaRarefaction[[7]]$Level <- rep(krakenTaxa[[7]], length(krakenAlphaRarefaction[[7]]$ID))
+krakenAlphaRarefaction[[8]]$Level <- rep(krakenTaxa[[8]], length(krakenAlphaRarefaction[[8]]$ID))
+
+krakenAlphaRarefactionDF <- lapply(krakenAlphaRarefaction, function(x){
+  x <- as.data.frame(x)
+  x
+})
+
+krakenAlphaRarefactionDF <- do.call("rbind", krakenAlphaRarefactionDF)
 
 # Use microbenchmark to compare between the two approaches
 
@@ -310,7 +333,8 @@ krakenSamples <- rownames(krakenResultsMat[["D"]])
 
 amrRarefy <- mclapply(amrRarefy, function(x) set_names(x,samples), mc.cores=3)
 
-krakenRarCurve <- mclapply(krakenRarCurve, function(x) set_names(x,krakenSamples), mc.cores=10)
+krakenRarCurve <- mclapply(krakenRarCurve, function(x){
+  set_names(x,krakenSamples)}, mc.cores=10)
 # Generate list of dataframes
 # Hacky, but it works. Need to make it cleaner and faster.
 
@@ -322,7 +346,12 @@ amrRarefyDF <- map(amrRarefy, function(x) as_tibble(x, attr(x, "names")))
 krakenRarCurve <- krakenRarCurve %>% 
   map(as_vector)
 
+krakenAlphaDiversity <- krakenAlphaDiversity %>%
+  map(as_vector)
+
 krakenRarefyDF <- map(krakenRarCurve, function(x) as_tibble(x, attr(x, "names")))
+
+krakenAlphaDivDF <- map(krakenAlphaDiversity, function(x) as_tibble(x, attr(x, "names")))
 
 # Split rownames in order to generate columns with useful information
 
@@ -342,7 +371,7 @@ mc.cores=3
 krakenRarefyDF <- mclapply(krakenRarefyDF, function(x) {
   x$Sample <- row.names(x)
   x$Subsample <- str_extract(x$Sample, "\\.N\\d+")
-  x$Subsample <- as.numeric(str_replace(x$Subsample, "N",""))
+  x$Subsample <- as.numeric(str_replace(x$Subsample, "\\.N",""))
   x$Depth <- str_replace(x$Sample, "_.*", "")
   x$SampleID <- str_extract(x$Sample, "_.*\\.")
   x$SampleID <- str_replace(x$SampleID, "_", "")
@@ -352,6 +381,8 @@ krakenRarefyDF <- mclapply(krakenRarefyDF, function(x) {
 }, 
 mc.cores=10
 )
+
+krakenAlphaRarefactionDF$Depth <- krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$ID, "_.*", "")
 
 # Generate one single dataframe and create column for AMR Level
 
@@ -367,6 +398,10 @@ krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "F", "D1")
 krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "H", "D0.5")
 krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "QD", "D0.25")
 
+
+krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$Depth, "F", "D1")
+krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$Depth, "H", "D0.5")
+krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$Depth, "QD", "D0.25")
 
 # Plot rarefaction curves using Rarefaction Analyzer data
 
@@ -453,14 +488,13 @@ vennPalette <- rev(vennPalette)
 krakenAllPhylumRarCurve <- krakenAllPhylum %>%
   ggplot(aes(Subsample, value, color=Depth)) +
   geom_point(alpha=0.6) + 
-  xlab = 
-  scale_fill_manual(c(vennPalette))
-  
-krakenPhylumFacet <- krakenAllPhylumRarCurve + 
+  xlab = "Number of Phyla" 
+  scale_fill_manual(c(vennPalette)) +
   facet_grid(. ~ Depth)
+  
 
 krakenAllClassRarCurve <- krakenAllClass %>%
-  ggplot(aes(Subsample, value, color=Depth)) +
+  ggplot(aes(Number_of_Reads, Counts, color=Depth)) +
   geom_point(alpha=0.6) +
   scale_fill_manual(c(vennPalette))
 
@@ -480,8 +514,51 @@ krakenAllSpeciesRarCurve <- krakenAllSpecies %>%
   ggplot(aes(Subsample, value, color=Depth)) +
   geom_point(alpha=0.7) +
 
+# Attempt to more functional programming
+ 
+krakenRarefyDF <- krakenRarefyDF %>% filter(!krakenLevel %in% c("-", "D"))
+
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "P", "Phyla")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "C", "Classes")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "O", "Orders")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "F", "Families")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "G", "Genera")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "S", "Species")
+
+krakenAllList <- krakenRarefyDF %>% 
+  split(.$krakenLevel)
+
+# Alpha Diversity
+
+krakenAlphaRarefactionDF <- krakenAlphaRarefactionDF %>% filter(!Level %in% c("-", "D"))
+
+krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "P", "Phyla")
+krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "C", "Classes")
+krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "O", "Orders")
+krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "F", "Families")
+krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "G", "Genera")
+krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "S", "Species")
+
+krakenAlphaRarefactionDF$Level <- factor(krakenAlphaRarefactionDF$Level, 
+                                  levels = c('Phyla', 'Classes', 'Orders', 'Families', 'Genera', 'Species'))
+
+krakenAllList <- krakenAlphaDivDF %>% 
+  split(.$krakenLevel)
 
 
+
+krakenAllRarCurvesLarger <- krakenAllList %>%
+  map(function(x){
+    krakenRarefactionCurve(x)
+  })
+
+
+
+krakenAllAlphaBoxPlots <- krakenAlphaRarefactionDF %>%
+    krakenAlphaDiv()
+
+krakenAllSpRawBoxPlots <- krakenAlphaRarefactionDF %>%
+  krakenRarSpeciesRich()
 
 # Mean plots
 
