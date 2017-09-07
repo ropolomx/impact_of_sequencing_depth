@@ -643,19 +643,19 @@ krakenAllSpRawBoxPlots <- krakenAlphaRarefaction2DF %>%
 
 # AMR rarefaction curves
 
-png(filename = "amrClassRarefaction.png", width=1962, height = 1297)
+png(filename = "amrClassRarefaction2.png", width=1962, height = 1297)
 print(amrAllRarCurves[[1]])
 dev.off()
 
-png(filename = "amrGeneRarefaction.png", width=1962, height = 1297)
+png(filename = "amrGeneRarefaction2.png", width=1962, height = 1297)
 print(amrAllRarCurves[[2]])
 dev.off()
 
 
-png(filename = "amrGroupRarefaction.png", width=1962, height = 1297)
+png(filename = "amrGroupRarefaction2.png", width=1962, height = 1297)
 print(amrAllRarCurves[[3]])
 dev.off()
 
-png(filename = "amrMechanismRarefaction.png", width=1962, height = 1297)
+png(filename = "amrMechanismRarefaction2.png", width=1962, height = 1297)
 print(amrAllRarCurves[[4]])
 dev.off()

@@ -194,8 +194,8 @@ krakenRarefactionCurve <- function(taxSubset){
 #'
 #' @examples
 amrRarefactionCurve <- function(amrSubset){
-    rarefactionCurve <- ggplot(amrSubset, aes(Subsample, value, color=Depth, group=SampleID)) +
-    geom_line(aes(alpha=0.4, size=4)) + 
+    rarefactionCurve <- ggplot(amrSubset, aes(Subsample, value, color=Depth)) +
+    geom_line(aes(group=SampleID, alpha=0.4, size=4)) + 
     theme(strip.text.x=element_text(size=30),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
