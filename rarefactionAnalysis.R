@@ -262,14 +262,9 @@ krakenResultsMat <- lapply(krakenResultsMat, function(x){
 
 # mclapply version
 
-amrRarefy <- mclapply(amrResultsMat, function(x){
+amrRarCurve <- mclapply(amrResultsMat, function(x){
   raremax <- min(rowSums(x))
-  rarecurve(x, step=5, sample=raremax)
-},mc.cores=3)
-
-krakenAlphaDiversity <- mclapply(krakenResultsMat, function(x){
-  AlphaDiv <- diversity(x, index="invsimpson")
-  return(AlphaDiv)
+  rarecurve(x, step=50, sample=raremax)
 },mc.cores=10)
 
 krakenRarCurve <- mclapply(krakenResultsMat, function(x){
@@ -277,13 +272,30 @@ krakenRarCurve <- mclapply(krakenResultsMat, function(x){
   rarecurve(x, step=1000, sample=raremax)
 },mc.cores=10)
 
-
-krakenAlphaRarefaction <- lapply(krakenResultsMat, function(x){
+# Use mclapply function
+krakenAlphaRarefaction <- mclapply(krakenResultsMat, function(x){
   alpha_rarefaction(x, minlevel=0)
-})
+},mc.cores = 10)
+
+krakenAlphaRarefaction2 <- mclapply(krakenResultsMat, function(x){
+  alpha_rarefaction(x, minlevel=0)
+}, mc.cores=10)
+
+amrAlphaRarefaction <- mclapply(amrResultsMat, function(x){
+  alpha_rarefaction(x, minlevel=0)
+}, mc.cores=10)
 
 krakenAlphaRarefaction <- lapply(krakenAlphaRarefaction, function(x) data.table(ID=names(x$raw_species_abundance), RawSpeciesAbundance=as.numeric(x$raw_species_abundance), RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), AlphaDiv=as.numeric(x$alphadiv)))
 
+krakenAlphaRarefaction2 <- lapply(krakenAlphaRarefaction2, function(x) data.table(ID=names(x$raw_species_abundance), RawSpeciesAbundance=as.numeric(x$raw_species_abundance), RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), AlphaDiv=as.numeric(x$alphadiv), Shannon=as.numeric(x$shannon), Evenness=as.numeric(x$evenness)))
+
+amrAlphaRarefaction <- lapply(amrAlphaRarefaction, function(x) data.table(ID=names(x$raw_species_abundance), RawSpeciesAbundance=as.numeric(x$raw_species_abundance), RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), AlphaDiv=as.numeric(x$alphadiv), Shannon=as.numeric(x$shannon), Evenness=as.numeric(x$evenness)))
+
+amrCategories <- levels(amrResultsTidy$Category)
+amrAlphaRarefaction[[1]]$Level <- rep(amrCategories[[1]], length(amrAlphaRarefaction[[1]]$ID))
+amrAlphaRarefaction[[2]]$Level <- rep(amrCategories[[2]], length(amrAlphaRarefaction[[2]]$ID))
+amrAlphaRarefaction[[3]]$Level <- rep(amrCategories[[3]], length(amrAlphaRarefaction[[3]]$ID))
+amrAlphaRarefaction[[4]]$Level <- rep(amrCategories[[4]], length(amrAlphaRarefaction[[4]]$ID))
 
 krakenAlphaRarefaction[[1]]$Level <- rep(krakenTaxa[[1]], length(krakenAlphaRarefaction[[1]]$ID))
 krakenAlphaRarefaction[[2]]$Level <- rep(krakenTaxa[[2]], length(krakenAlphaRarefaction[[2]]$ID))
@@ -294,12 +306,35 @@ krakenAlphaRarefaction[[6]]$Level <- rep(krakenTaxa[[6]], length(krakenAlphaRare
 krakenAlphaRarefaction[[7]]$Level <- rep(krakenTaxa[[7]], length(krakenAlphaRarefaction[[7]]$ID))
 krakenAlphaRarefaction[[8]]$Level <- rep(krakenTaxa[[8]], length(krakenAlphaRarefaction[[8]]$ID))
 
+krakenAlphaRarefaction2[[1]]$Level <- rep(krakenTaxa[[1]], length(krakenAlphaRarefaction2[[1]]$ID))
+krakenAlphaRarefaction2[[2]]$Level <- rep(krakenTaxa[[2]], length(krakenAlphaRarefaction2[[2]]$ID))
+krakenAlphaRarefaction2[[3]]$Level <- rep(krakenTaxa[[3]], length(krakenAlphaRarefaction2[[3]]$ID))
+krakenAlphaRarefaction2[[4]]$Level <- rep(krakenTaxa[[4]], length(krakenAlphaRarefaction2[[4]]$ID))
+krakenAlphaRarefaction2[[5]]$Level <- rep(krakenTaxa[[5]], length(krakenAlphaRarefaction2[[5]]$ID))
+krakenAlphaRarefaction2[[6]]$Level <- rep(krakenTaxa[[6]], length(krakenAlphaRarefaction2[[6]]$ID))
+krakenAlphaRarefaction2[[7]]$Level <- rep(krakenTaxa[[7]], length(krakenAlphaRarefaction2[[7]]$ID))
+krakenAlphaRarefaction2[[8]]$Level <- rep(krakenTaxa[[8]], length(krakenAlphaRarefaction2[[8]]$ID))
+
+amrAlphaRarefactionDF <- lapply(amrAlphaRarefaction, function(x){
+  x <- as.data.frame(x)
+  x
+})
+
 krakenAlphaRarefactionDF <- lapply(krakenAlphaRarefaction, function(x){
   x <- as.data.frame(x)
   x
 })
 
+krakenAlphaRarefaction2DF <- lapply(krakenAlphaRarefaction2, function(x){
+  x <- as.data.frame(x)
+  x
+})
+
+amrAlphaRarefactionDF <- do.call("rbind", amrAlphaRarefactionDF)
+  
 krakenAlphaRarefactionDF <- do.call("rbind", krakenAlphaRarefactionDF)
+
+krakenAlphaRarefaction2DF <- do.call("rbind", krakenAlphaRarefaction2DF)
 
 # Use microbenchmark to compare between the two approaches
 
@@ -324,24 +359,23 @@ krakenAlphaRarefactionDF <- do.call("rbind", krakenAlphaRarefactionDF)
 # Rename list of rarefied data using the sample names
 # Need to think of a better way to extract the sample names
 
-samples <- rownames(amrResultsMat[["Class"]])
+amrSamples <- rownames(amrResultsMat[["Class"]])
 
 krakenSamples <- rownames(krakenResultsMat[["D"]])
 
 # Review syntax here
 # Might need to add function to utility function list
 
-amrRarefy <- mclapply(amrRarefy, function(x) set_names(x,samples), mc.cores=3)
+amrRarCurve <- mclapply(amrRarCurve, function(x){
+  set_names(x,amrSamples)}, mc.cores=3)
 
 krakenRarCurve <- mclapply(krakenRarCurve, function(x){
   set_names(x,krakenSamples)}, mc.cores=10)
 # Generate list of dataframes
 # Hacky, but it works. Need to make it cleaner and faster.
 
-amrRarefy <- amrRarefy %>% 
+amrRarCurve <- amrRarCurve %>% 
   map(as_vector)
-
-amrRarefyDF <- map(amrRarefy, function(x) as_tibble(x, attr(x, "names")))
 
 krakenRarCurve <- krakenRarCurve %>% 
   map(as_vector)
@@ -349,20 +383,20 @@ krakenRarCurve <- krakenRarCurve %>%
 krakenAlphaDiversity <- krakenAlphaDiversity %>%
   map(as_vector)
 
+amrRarCurveDF <- map(amrRarCurve, function(x) as_tibble(x, attr(x, "names")))
+
 krakenRarefyDF <- map(krakenRarCurve, function(x) as_tibble(x, attr(x, "names")))
 
 krakenAlphaDivDF <- map(krakenAlphaDiversity, function(x) as_tibble(x, attr(x, "names")))
 
 # Split rownames in order to generate columns with useful information
 
-amrRarefyDF <- mclapply(amrRarefyDF, function(x) {
+amrRarCurveDF <- mclapply(amrRarCurveDF, function(x) {
   x$Sample <- row.names(x)
   x$Subsample <- str_extract(x$Sample, "N\\d+")
   x$Subsample <- as.numeric(str_replace(x$Subsample, "N",""))
-  x$Depth <- str_replace(x$Sample, "\\.N.*$", "")
-  x$Depth <- str_replace(x$Depth, "^\\d+_", "")
-  x$SampleNumber <- str_replace(x$Sample, "_.*", "")
-  x$Sample <- str_replace(x$Sample, "\\.N.*$", "")
+  x$SampleID <- str_replace(x$Sample, "\\.N.*$", "")
+  x$Depth <- str_replace(x$Sample, "_.*", "")
   x
 }, 
 mc.cores=3
@@ -382,13 +416,21 @@ krakenRarefyDF <- mclapply(krakenRarefyDF, function(x) {
 mc.cores=10
 )
 
-krakenAlphaRarefactionDF$Depth <- krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$ID, "_.*", "")
+amrAlphaRarefactionDF$Depth <- str_replace(amrAlphaRarefactionDF$ID, "_.*", "")
 
+krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$ID, "_.*", "")
+
+
+krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$ID, "_.*", "")
 # Generate one single dataframe and create column for AMR Level
 
-amrRarefyDF <- do.call("rbind", amrRarefyDF)
-amrRarefyDF$AMRLevel <- row.names(amrRarefyDF)
-amrRarefyDF$AMRLevel <- str_extract(amrRarefyDF$AMRLevel, "^\\w+")
+amrRarCurveDF <- do.call("rbind", amrRarCurveDF)
+amrRarCurveDF$AMRLevel <- row.names(amrRarCurveDF)
+amrRarCurveDF$AMRLevel <- str_extract(amrRarCurveDF$AMRLevel, "^\\w+")
+amrRarCurveDF$Depth <- str_replace(amrRarCurveDF$Depth, "F", "D1")
+amrRarCurveDF$Depth <- str_replace(amrRarCurveDF$Depth, "H", "D0.5")
+amrRarCurveDF$Depth <- str_replace(amrRarCurveDF$Depth, "QD", "D0.25")
+
 
 krakenRarefyDF <- do.call("rbind", krakenRarefyDF)
 krakenRarefyDF$krakenLevel <- row.names(krakenRarefyDF)
@@ -402,6 +444,15 @@ krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "QD", "D0.25")
 krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$Depth, "F", "D1")
 krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$Depth, "H", "D0.5")
 krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$Depth, "QD", "D0.25")
+
+amrAlphaRarefactionDF$Depth <- str_replace(amrAlphaRarefactionDF$Depth, "F", "D1")
+amrAlphaRarefactionDF$Depth <- str_replace(amrAlphaRarefactionDF$Depth, "H", "D0.5")
+amrAlphaRarefactionDF$Depth <- str_replace(amrAlphaRarefactionDF$Depth, "QD", "D0.25")
+
+krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, "F", "D1")
+krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, "H", "D0.5")
+krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, "QD", "D0.25")
+
 
 # Plot rarefaction curves using Rarefaction Analyzer data
 
@@ -528,9 +579,13 @@ krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "S", "Spec
 krakenAllList <- krakenRarefyDF %>% 
   split(.$krakenLevel)
 
+amrAllList <- amrRarCurveDF %>% 
+  split(.$AMRLevel)
+
 # Alpha Diversity
 
 krakenAlphaRarefactionDF <- krakenAlphaRarefactionDF %>% filter(!Level %in% c("-", "D"))
+krakenAlphaRarefaction2DF <- krakenAlphaRarefaction2DF %>% filter(!Level %in% c("-", "D"))
 
 krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "P", "Phyla")
 krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "C", "Classes")
@@ -539,13 +594,31 @@ krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "F
 krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "G", "Genera")
 krakenAlphaRarefactionDF$Level <- str_replace(krakenAlphaRarefactionDF$Level, "S", "Species")
 
+krakenAlphaRarefaction2DF$Level <- str_replace(krakenAlphaRarefaction2DF$Level, "P", "Phyla")
+krakenAlphaRarefaction2DF$Level <- str_replace(krakenAlphaRarefaction2DF$Level, "C", "Classes")
+krakenAlphaRarefaction2DF$Level <- str_replace(krakenAlphaRarefaction2DF$Level, "O", "Orders")
+krakenAlphaRarefaction2DF$Level <- str_replace(krakenAlphaRarefaction2DF$Level, "F", "Families")
+krakenAlphaRarefaction2DF$Level <- str_replace(krakenAlphaRarefaction2DF$Level, "G", "Genera")
+krakenAlphaRarefaction2DF$Level <- str_replace(krakenAlphaRarefaction2DF$Level, "S", "Species")
+
 krakenAlphaRarefactionDF$Level <- factor(krakenAlphaRarefactionDF$Level, 
                                   levels = c('Phyla', 'Classes', 'Orders', 'Families', 'Genera', 'Species'))
+
+
+amrRarCurveDF$AMRLevel <- factor(amrRarCurveDF$AMRLevel, 
+                                  levels = c('Class', 'Mechanism', 'Group', 'Gene'))
+
+amrAlphaRarefactionDF$Level <- factor(amrAlphaRarefactionDF$Level, 
+                                 levels = c('Class', 'Mechanism', 'Group', 'Gene'))
+
 
 krakenAllList <- krakenAlphaDivDF %>% 
   split(.$krakenLevel)
 
-
+amrAllRarCurves <- amrAllList %>%
+  map(function(x){
+    amrRarefactionCurve(x)
+  })
 
 krakenAllRarCurvesLarger <- krakenAllList %>%
   map(function(x){
@@ -553,42 +626,36 @@ krakenAllRarCurvesLarger <- krakenAllList %>%
   })
 
 
+amrAllAlphaBoxPlots <- amrAlphaRarefactionDF %>%
+  amrAlphaDiv()
+
+amrAllSpRawBoxPlots <- amrAlphaRarefactionDF %>%
+    amrRawSpeciesRich()
 
 krakenAllAlphaBoxPlots <- krakenAlphaRarefactionDF %>%
     krakenAlphaDiv()
 
-krakenAllSpRawBoxPlots <- krakenAlphaRarefactionDF %>%
-  krakenRarSpeciesRich()
+krakenAllAlphaBoxPlots2 <- krakenAlphaRarefaction2DF %>%
+    krakenAlphaDiv()
 
-# Mean plots
+krakenAllSpRawBoxPlots <- krakenAlphaRarefaction2DF %>%
+  krakenRawSpeciesRich()
 
-krakenPhylumRarCurve <- krakenRarPhylum %>% 
-  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
-  geom_line() +
-  facet_grid(. ~ Depth)
+# AMR rarefaction curves
 
-krakenClassRarCurve <- krakenRarClass %>% 
-  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
-  geom_line() +
-  facet_grid(. ~ Depth)
+png(filename = "amrClassRarefaction.png", width=1962, height = 1297)
+print(amrAllRarCurves[[1]])
+dev.off()
 
-krakenOrderRarCurve <- krakenRarOrder %>% 
-  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
-  geom_line() +
-  facet_grid(. ~ Depth)
+png(filename = "amrGeneRarefaction.png", width=1962, height = 1297)
+print(amrAllRarCurves[[2]])
+dev.off()
 
-krakenFamilyRarCurve <- krakenRarFamily %>% 
-  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
-  geom_line() +
-  facet_grid(. ~ Depth)
 
-krakenGenusRarCurve <- krakenRarGenus %>% 
-  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
-  geom_line() +
-  facet_grid(. ~ Depth)
+png(filename = "amrGroupRarefaction.png", width=1962, height = 1297)
+print(amrAllRarCurves[[3]])
+dev.off()
 
-krakenSpeciesRarCurve <- krakenRarSpecies %>% 
-  ggplot(aes(Subsample, MeanCounts, color=Depth)) + 
-  geom_point() +
-  scale_y_continuous(breaks=seq(0, 2500, 250)) +
-  facet_grid(. ~ Depth)
+png(filename = "amrMechanismRarefaction.png", width=1962, height = 1297)
+print(amrAllRarCurves[[4]])
+dev.off()
