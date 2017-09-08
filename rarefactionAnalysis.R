@@ -30,6 +30,8 @@ amrRarefiedConcat <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug
 
 amrResultsFiltered <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/cov_sampler_parsed/amrFiltered_75_genefrac.csv')
 
+amrReadstoHitRatio <- read_tsv('~/amr/2-4-8_results/2_4_8_study_RZ/hitToReadRatios.tsv')
+
 # Remove D0.25_seqtk data from filtered data frame
 
 amrResultsFiltered <- amrResultsFiltered %>% filter(Sample_type != "D0.25_seqtk")
@@ -659,3 +661,120 @@ dev.off()
 png(filename = "amrMechanismRarefaction2.png", width=1962, height = 1297)
 print(amrAllRarCurves[[4]])
 dev.off()
+
+
+# Correlation plot: amr reads to hits
+
+amrReadstoHitRatio$Sample_type <- str_replace(amrReadstoHitRatio$Sample_type, "F", "D1")
+
+amrReadstoHitRatio$Sample_type <- str_replace(amrReadstoHitRatio$Sample_type, "H", "D0.5")
+
+amrReadstoHitRatio$Sample_type <- str_replace(amrReadstoHitRatio$Sample_type, "Q", "D0.25")
+
+amrReadsvsHits <- cor(x = amrReadstoHitRatio$Number_of_reads, amrReadstoHitRatio$AMR_hits, method = "spearman")
+
+amrReadsvsHitsCorTest <- cor.test(x = amrReadstoHitRatio$Number_of_reads, amrReadstoHitRatio$AMR_hits, method = "spearman")
+
+amrReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(Number_of_reads, AMR_hits, color=Sample_type)) + geom_point(alpha=0.4, size=4) + geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5)
+
+amrReadsvsHitsCor + 
+  ylab("Number of AMR Hits\n") + 
+  xlab("\nNumber of reads") + 
+  theme(axis.text.y=element_text(size=35),
+        axis.title.y=element_text(size=44),
+          axis.text.x=element_text(size=35),
+          axis.title.x=element_text(size=44),
+          legend.title=element_text(size=36),
+          legend.text=element_text(size=36, vjust=0.5),
+        legend.key = element_rect(size = 2),
+        legend.key.size = unit(2, "lines"),
+        legend.spacing = unit(0.2,"lines")) + 
+  scale_color_manual(values=vennPalette, 
+                    name="Sample type\n")
+
+# Kruskal-Wallis tests
+
+# Resistome
+
+amrAlphaRarefactionLevels <- amrAlphaRarefactionDF %>%
+  split(.$Level)
+
+amrRichnessKruskal <- amrAlphaRarefactionLevels %>%
+  map(function(x){
+    kruskal.test(RawSpeciesAbundance ~ Depth, data = x)
+    })
+
+amrRichnessPosthoc <- amrAlphaRarefactionLevels %>%
+  map(function(x){
+    posthoc.kruskal.nemenyi.test(RawSpeciesAbundance ~ Depth, data=x, dist="Chisq")
+  })
+
+amrAlphaKruskal <- amrAlphaRarefactionLevels %>%
+  map(function(x){
+    kruskal.test(AlphaDiv ~ Depth, data = x)
+  })
+
+amrAlphaPosthoc <- amrAlphaRarefactionLevels %>%
+  map(function(x){
+    posthoc.kruskal.nemenyi.test(AlphaDiv ~ Depth, data = x, dist="Chisq")
+  })
+
+# Microbiome
+
+krakenAlphaRarefaction2DF$Depth <- as.factor(krakenAlphaRarefaction2DF$Depth)
+
+krakenAlphaRarefactionLevels <- krakenAlphaRarefaction2DF %>%
+  split(.$Level)
+
+krakenRichnessKruskal <- krakenAlphaRarefactionLevels %>%
+  map(function(x){
+    kruskal.test(RawSpeciesAbundance ~ Depth, data = x)
+    })
+
+krakenRichnessPosthoc <- krakenAlphaRarefactionLevels %>%
+  map(function(x){
+    posthoc.kruskal.nemenyi.test(RawSpeciesAbundance ~ Depth, data=x, dist="Chisq")
+  })
+
+krakenAlphaKruskal <- krakenAlphaRarefactionLevels %>%
+  map(function(x){
+    kruskal.test(AlphaDiv ~ Depth, data = x)
+  })
+
+krakenAlphaPosthoc <- krakenAlphaRarefactionLevels %>%
+  map(function(x){
+    posthoc.kruskal.nemenyi.test(AlphaDiv ~ Depth, data = x, dist="Chisq")
+  })
+
+
+# Generating kraken correlation plot
+
+krakenPhylumResults <- krakenResultsList[["P"]]
+
+krakenPhylumResults$SampleID <- str_replace(krakenPhylumResults$Sample, "_00[6-8]")
+
+krakenPhylumSums <- krakenPhylumResults %>%
+  group_by(TaxID, SampleID, Sample_Type) %>%
+  summarise(MeanHits = mean(CladeReads)) %>%
+  group_by(SampleID) %>%
+  summarise(SumHits = sum(MeanHits))
+  
+krakenReadsvsHitsCorTest <- cor.test(x = krakenReadstoHitRatio$Reads, krakenReadstoHitRatio$KrakenHits, method = "spearman")
+
+krakenReadsvsHitsCor <- ggplot(krakenReadstoHitRatio, aes(Reads, KrakenHits, color=Sample_type)) + geom_point(alpha=0.4, size=4) + geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
+
+krakenReadsvsHitsCor +
+  ylab("Number of Kraken Hits\n") +
+  xlab("\nNumber of reads") +
+  theme(axis.text.y=element_text(size=35),
+        axis.title.y=element_text(size=44),
+        axis.text.x=element_text(size=35),
+        axis.title.x=element_text(size=44),
+        legend.title=element_text(size=36),
+        legend.text=element_text(size=36, vjust=0.5),
+        legend.key = element_rect(size = 2),
+        legend.key.size = unit(2, "lines"),
+        legend.spacing = unit(0.2,"lines")) +
+  scale_color_manual(values=vennPalette,
+                     name="Sample type\n")
+

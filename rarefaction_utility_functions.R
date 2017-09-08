@@ -91,7 +91,7 @@ widenAMR <- function(summarizedAMR) {
 
 widenKraken <- function(summarizedKraken) {
   krakenLevelWide <- summarizedKraken %>% 
-    spread_('Sample', 'MeanHits', fill = 0)
+    spread_('Sample', 'SumHits', fill = 0)
   return(krakenLevelWide)
 }
 
