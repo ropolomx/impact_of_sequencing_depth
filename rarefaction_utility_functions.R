@@ -1,5 +1,3 @@
-# Utility functions for rarefaction analysis
-
 #' Summarize AMR results by levels
 #' 
 #' @param X A tidy dataset.
@@ -17,7 +15,7 @@ summarizeAMRlevels <- function(X, amrLevel) {
   return(amrResultsSummarised)
 }
 
-#' Title
+#' Summarize results by 
 #'
 #' @param X 
 #'
