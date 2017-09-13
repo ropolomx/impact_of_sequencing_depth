@@ -735,7 +735,3 @@ krakenReadsvsHitsCor +
         legend.spacing = unit(0.2,"lines")) +
   scale_color_manual(values=vennPalette,
                      name="Sample type\n")
-
-# Convert the LevelName to Factor
-
-amrResultsTidy$LevelName <- as.factor(amrResultsTidy$LevelName)
