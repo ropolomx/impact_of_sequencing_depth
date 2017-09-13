@@ -717,7 +717,9 @@ krakenPhylumSums <- krakenPhylumResults %>%
   
 krakenReadsvsHitsCorTest <- cor.test(x = krakenReadstoHitRatio$Reads, krakenReadstoHitRatio$KrakenHits, method = "spearman")
 
-krakenReadsvsHitsCor <- ggplot(krakenReadstoHitRatio, aes(Reads, KrakenHits, color=Sample_type)) + geom_point(alpha=0.4, size=4) + geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
+krakenReadsvsHitsCor <- ggplot(krakenReadstoHitRatio, aes(Reads, KrakenHits, color=Sample_type)) + 
+  geom_point(alpha=0.4, size=4) + 
+  geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
 
 krakenReadsvsHitsCor +
   ylab("Number of Kraken Hits\n") +
