@@ -1,5 +1,5 @@
 # Rarefaction analysis of 2-4-8 study data
-# Processing of AMR and Kraken data
+# Analysis of alpha-diversity and species richness
 
 # Load necessary packages
 
@@ -14,49 +14,13 @@ library(vegan)
 
 # Source script of utility functions
 
+# Will create an R package in the future
+
 source('rarefaction_utility_functions.R')
 
 # Read AMR and Kraken data
 
-# Datasets were concatenated with Python-Pandas
-
-# Results generated with Rarefaction Analyzer
-
-amrRarefiedConcat <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefiedConcat.csv')
-
-# Results generated with Coverage Sampler and filtered with Python-Pandas
-# Filtering involved keeping results with gene fraction >= 75% and 
-# removing all those results with genes that require SNP confirmation.
-
-amrResultsFiltered <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/cov_sampler_parsed/amrFiltered_75_genefrac.csv')
-
-amrReadstoHitRatio <- read_tsv('~/amr/2-4-8_results/2_4_8_study_RZ/hitToReadRatios.tsv')
-
-# Remove D0.25_seqtk data from filtered data frame
-
-amrResultsFiltered <- amrResultsFiltered %>% filter(Sample_type != "D0.25_seqtk")
-
-# Replace "Name" with "Gene" in headers of the filtered data frame
-
-names(amrResultsFiltered) <- str_replace(names(amrResultsFiltered), "Name", "Gene")
-
-
-# Read Kraken concatenated and filtered file (no Eukaryotes, and no PhiX)
-
-krakenResultsFiltered <- read.table('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/allKraken_FHQ/kraken_filtered/krakenConcat.tsv', sep="\t", header=TRUE)
-
-# Steps below are for further data cleaning. This might not be needed if the 
-# dataset is already filtered.
-
-# Need to fix the halves
-
-fixSampleName <- amrRarefiedDF[amrRarefiedDF$Sample %in% c("H_006", "H_007", "H_008"),]
-
-fixSampleName$Sample <- str_extract(fixSampleName$SampleName, "H_00[6-8]_\\w{4}")
-
-amrRarefiedDF <- amrRarefiedDF %>% filter(!Sample %in% c("H_006", "H_007", "H_008"))
-
-amrRarefied <- rbind(amrRarefiedDF, fixSampleName)
+# Reading AMR results that were generated with Rarefaction Analyzer (percent-based)
 
 # Update path accordingly
 
@@ -64,18 +28,16 @@ amrRarefiedFiles <- Sys.glob(file.path("~",
                                        "amr",
                                        "2-4-8_results",
                                        "2_4_8_study_RZ",
-                                       "Results_Aug2017_75_gene_frac",
-                                       "*",
-                                       "*rarefied*.tab*"))
-
+                                       "amrResults_Aug2017_75_gene_frac",
+                                       "*_results",
+                                       "*rarefied*.tabular"))
 
 # Split the path names and extract the sample name only
 
 amrResultsNames <- str_split(amrRarefiedFiles, pattern = "\\/")
 
-# Extraction of sample name is being done by extracting the 8th element out of each list element.
-
-# TODO: Explore if this can be done with a print statement
+# Extraction of sample name is being done by extracting the 9th element out of each list 
+# element.
 
 amrResultsNames <- amrResultsNames %>% 
   map(function(x){
@@ -105,7 +67,7 @@ amrResultsNames <- amrResultsNames %>%
 amrResultsNames <- unlist(amrResultsNames)
 
 # Let's now read all the Coverage Sampler tabular files
-# We are using readr (read_tsv)
+# We are using the readr package (read_tsv)
 # We are also using the list of sample names extracted in the previous function
 # to set the names of the list elements
 # This will make life so much easier!
@@ -114,30 +76,50 @@ amrResults <- amrRarefiedFiles %>%
   map(read_tsv, col_names = c("Sample", "Counts")) %>%
   set_names(nm=amrResultsNames)
 
+# Join all the datasets into one dataframe that will be analyzed
+
+amrResults <- do.call("rbind", amrResults)
+
 # Need to add a column with sample name to the Coverage Sampler output
 # Also need to add a column with sample depth
 
-#TODO: Attempt to use map2 or pmap
+amrResults$SampleName <- row.names(amrResults)
+amrResults$SampleID <- str_extract(amrResults$SampleName, "^.*_rarefied")
+amrResults$SampleID <- str_replace(amrResults$SampleID, "_rarefied", "")
+amrResults$Depth <- str_extract(amrResults$SampleName, "rarefied_.*_")
+amrResults$Depth <- str_replace(amrResults$Depth, "rarefied_", "")
+amrResults$Depth <- str_replace(amrResults$Depth, "_","")
+amrResults$amrLevel <- str_extract(amrResults$SampleName, "(class|mechanism|group|gene)")
 
-amrArgs <- list(amrResults, amrResultsNames)
+# Read csv file containing all rarefied datasets which were concatenated with Python-Pandas
 
-amrResults <- amrArgs %>%
-  map2(function(x) {
-    x$Sample <- rep(amrResultsNames, nrow(x))
-    x
-  })
+amrRarefiedConcat <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefiedConcat.csv')
+
+# Another alternative
+# Results generated with Coverage Sampler and filtered with Python-Pandas
+# Filtering involved keeping results with gene fraction >= 75% and 
+# removing all those results with genes that require SNP confirmation.
+
+amrResultsFiltered <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/cov_sampler_parsed/amrFiltered_75_genefrac.csv')
+
+amrReadstoHitRatio <- read_tsv('~/amr/2-4-8_results/2_4_8_study_RZ/hitToReadRatios.tsv')
+
+# Read Kraken concatenated and filtered file (no Eukaryotes, and no PhiX)
+
+krakenResultsFiltered <- read.table('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/allKraken_FHQ/kraken_filtered/krakenConcat.tsv', sep="\t", header=TRUE)
 
 
-# Join all the datasets into one dataframe that will be analyzed
+# Remove D0.25_seqtk data from filtered data frame
 
-amrResults <- do.call(amrResults, "rbind")
+amrResultsFiltered <- amrResultsFiltered %>% 
+  filter(Sample_type != "D0.25_seqtk")
 
-# TODO: If output is generated from Rarefaction Analyzer,
-# see how it can be applied to the analysis of Kraken data, 
-# although it seems that program can only be applied to process SAM files
+# Replace "Name" with "Gene" in headers of the filtered data frame
 
-# Convert AMR results to "tidy" format
-# Kraken table is already in tidy format.
+names(amrResultsFiltered) <- str_replace(names(amrResultsFiltered), "Name", "Gene")
+
+# Convert AMR filtered results to "tidy" format in order to have a column with 
+# all AMR levels
 
 amrResultsTidy <- amrResultsFiltered %>% 
   gather(Level, LevelName, c(1,6:8))
@@ -149,27 +131,6 @@ amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "\\d$","")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "full", "D1")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "half", "D0.5")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "quar*", "D0.25")
-
-# Change the names of the Kraken sequencing depths columns
-
-krakenResults$Depth <- str_replace(krakenResults$Sample, "_filtered2_report$","")
-krakenResults$Depth <- str_replace(krakenResults$Depth, "^\\d+_","")
-krakenResults$Depth <- str_replace(krakenResults$Depth, "\\d$","")
-krakenResults$Depth <- str_replace(krakenResults$Depth, "full", "D1")
-krakenResults$Depth <- str_replace(krakenResults$Depth, "half", "D0.5")
-krakenResults$Depth <- str_replace(krakenResults$Depth, "quar*", "D0.25")
-
-# Convert the LevelName to Factor
-
-amrResultsTidy$LevelName <- as.factor(amrResultsTidy$LevelName)
-
-# Keep results with over 80 % coverage ratio
-
-amrResultsTidy <- amrResultsTidy %>% 
-  filter(Coverage_Ratio >= 0.80)
-
-# Vectors containing amr Levels and taxon levels to analyze
-#amrLevels <- c("Class", "Mechanism", "Group", "Gene Id")
 
 #### Starting with Filtered data ####
 
@@ -183,12 +144,9 @@ amrResultsTidy <- amrResultsFiltered %>%
 amrResultsTidy$Category <- factor(amrResultsTidy$Category, 
                                   levels = c('Class', 'Mechanism', 'Group', 'Gene'))
 
-
 amrCategories <- levels(amrResultsTidy$Category)
 
 krakenTaxa <- levels(krakenResultsFiltered$TaxRank)
-
-#taxonLevels <- c("D", "K", "C", "O", "F", "G", "S", "-")
 
 # Split tidy data frame of AMR results according to the Level vector
 
@@ -471,7 +429,7 @@ amrRarefiedMean <- amrRarefiedConcat %>%
   group_by(Depth,PercentSampling, Level) %>%
   summarise(MeanCounts = mean(Counts))
 
-amrRarefiedClass <- amrRarefiedMean[amrRarefiedMean$Level == "class",]
+amrRarefiedClass <- amrRarefiedConcat[amrRarefiedConcat$Level == "class",]
 
 amrRarefiedMechanism <- amrRarefiedConcat[amrRarefiedConcat$Level == "mechanism",]
 
@@ -510,7 +468,6 @@ amrGeneRarCurve <- amrRarefiedGene %>%
   scale_x_continuous(breaks=seq(5, 100, 5)) +
   facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
 
-
 # Plot aggregated rarefaction curves
 
 krakenRarefiedMean <- krakenRarefyDF %>%
@@ -545,7 +502,6 @@ krakenAllPhylumRarCurve <- krakenAllPhylum %>%
   scale_fill_manual(c(vennPalette)) +
   facet_grid(. ~ Depth)
   
-
 krakenAllClassRarCurve <- krakenAllClass %>%
   ggplot(aes(Number_of_Reads, Counts, color=Depth)) +
   geom_point(alpha=0.6) +
@@ -645,6 +601,8 @@ krakenAllSpRawBoxPlots <- krakenAlphaRarefaction2DF %>%
 
 # AMR rarefaction curves
 
+# TODO: change code to ggsave
+
 png(filename = "amrClassRarefaction2.png", width=1962, height = 1297)
 print(amrAllRarCurves[[1]])
 dev.off()
@@ -661,7 +619,6 @@ dev.off()
 png(filename = "amrMechanismRarefaction2.png", width=1962, height = 1297)
 print(amrAllRarCurves[[4]])
 dev.off()
-
 
 # Correlation plot: amr reads to hits
 
@@ -746,7 +703,6 @@ krakenAlphaPosthoc <- krakenAlphaRarefactionLevels %>%
     posthoc.kruskal.nemenyi.test(AlphaDiv ~ Depth, data = x, dist="Chisq")
   })
 
-
 # Generating kraken correlation plot
 
 krakenPhylumResults <- krakenResultsList[["P"]]
@@ -778,3 +734,6 @@ krakenReadsvsHitsCor +
   scale_color_manual(values=vennPalette,
                      name="Sample type\n")
 
+# Convert the LevelName to Factor
+
+amrResultsTidy$LevelName <- as.factor(amrResultsTidy$LevelName)

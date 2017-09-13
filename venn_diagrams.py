@@ -183,6 +183,18 @@ plt.clf()
 plt.cla()
 
 
+setOperationKeys = ['All_intersections',
+        'Full_vs_Half',
+        'Full_vs_Quar',
+        'Full_and_Half_vs_Quar',
+        'Half_vs_Full',
+        'Half_vs_Quar',
+        'Half_and_Quar_vs_Full',
+        'Quar_vs_Full',
+        'Quar_vs_Half',
+        'Quar_and_Full_vs_Half']
+
+
 def setOperations():
     """Generate a file with all the results of the set operations
     Ideally return a table with the results"""
@@ -310,20 +322,20 @@ allGroupComps = []
 allGeneComps = []
 
 for c in classLists:
-    allClassComps.append(krakenConcat[krakenConcat['Name'].isin(c)])
+    allClassComps.append(amrResults[amrResults['Class'].isin(c)])
 
-for m in mechSetLists:
-    allOrderComps.append(krakenConcat[krakenConcat['Name'].isin(o)])
+for m in mechLists:
+    allMechanismComps.append(amrResults[amrResults['Mechanism'].isin(m)])
 
 for g in groupLists:
-    allFamilyComps.append(krakenConcat[krakenConcat['Name'].isin(f)])
+    allGroupComps.append(amrResults[amrResults['Group'].isin(g)])
 
 for g in geneLists:
-    allOrderComps.append(krakenConcat[krakenConcat['Name'].isin(o)])
+    allGeneComps.append(amrResults[amrResults['Name'].isin(g)])
 
 classSlices = zip(setOperationKeys, allClassComps)
 
-mechSlices = zip(setOperationKeys, allMechComps)
+mechSlices = zip(setOperationKeys, allMechanismComps)
 
 groupSlices = zip(setOperationKeys, allGroupComps)
 
@@ -336,19 +348,19 @@ groupWriter = ExcelWriter('groupComparisons.xlsx')
 geneWriter = ExcelWriter('geneComparisons.xlsx')
 
 for n, df in classSlices:
-    df.to_excel(classWriter, sheet_name=n)
+    df.to_excel(classWriter, sheet_name=n, index=False)
 classWriter.save()
 
 for n, df in mechSlices:
-    df.to_excel(mechWriter, sheet_name=n)
+    df.to_excel(mechWriter, sheet_name=n, index=False)
 mechWriter.save()
 
 for n, df in groupSlices:
-    df.to_excel(groupWriter, sheet_name=n)
+    df.to_excel(groupWriter, sheet_name=n, index=False)
 groupWriter.save()
 
 for n, df in geneSlices:
-    df.to_excel(geneWriter, sheet_name=n)
+    df.to_excel(geneWriter, sheet_name=n, index=False)
 geneWriter.save()
 
 # Kraken data analysis
