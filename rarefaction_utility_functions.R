@@ -164,8 +164,8 @@ samplesByLevel <- function(rarefiedData) {
 #'
 #' @examples
 krakenRarefactionCurve <- function(taxSubset){
-    rarefactionCurve <- ggplot(taxSubset, aes(Number_of_Reads, Counts, color=Depth)) +
-    geom_point(alpha=1/50, size=2) + 
+    rarefactionCurve <- ggplot(taxSubset, aes(Subsample, value, color=Depth)) +
+    geom_point(aes(alpha=0.2, size=0.5, group=Sample)) + 
     theme(strip.text.x=element_text(size=30),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
@@ -179,7 +179,8 @@ krakenRarefactionCurve <- function(taxSubset){
     ylab(paste('Number ', 'of ', taxSubset$krakenLevel, '\n')) +
     ggtitle(paste(taxSubset$krakenLevel, '\n')) +
     scale_color_manual(values=vennPalette) +
-    scale_x_continuous(label=scientific) +
+    #scale_y_log10() +
+    scale_x_continuous(labels=scientific) +
     facet_grid(. ~ Depth)
 }
 
@@ -207,7 +208,7 @@ amrRarefactionCurve <- function(amrSubset){
       ylab(paste('Number ', 'of ', amrSubset$AMRLevel, '\n')) +
       ggtitle(paste(amrSubset$AMRLevel, '\n')) +
       scale_color_manual(values=vennPalette) +
-      scale_x_continuous(label=scientific) +
+      scale_x_log10() +
       facet_grid(. ~ Depth)
 }
 
@@ -236,7 +237,7 @@ krakenAlphaDiv <- function(taxSubset){
     xlab("Depth") +
     ylab("Inverse Simpson's Index") +
     ggtitle('Alpha Diversity by Depth for Rarefied data\nInverse Simpson Index') +
-    scale_color_manual(values=vennPalette) +
+    scale_color_manual(values=cbPalette) +
     facet_wrap( ~ Level, nrow=2, scales = "free_y")
 }
 
@@ -263,7 +264,7 @@ amrAlphaDiv <- function(amrSubset){
     xlab("Depth") +
     ylab("Inverse Simpson's Index") +
     ggtitle('Alpha Diversity by Depth for Rarefied data\nInverse Simpson Index') +
-    scale_color_manual(values=vennPalette) +
+    scale_color_manual(values=cbPalette) +
     facet_wrap( ~ Level, nrow=2, scales = "free_y")
 }
 

@@ -24,9 +24,9 @@ def prepare_kraken(kraken):
 # Remove
 
 def categoryDiffKraken(category):
-    full = krakenConcat.loc[(krakenConcat['TaxLevel'] == category) & (krakenConcat['Sample_Type'] =="F"), "Name"]
-    half = krakenConcat.loc[(krakenConcat['TaxLevel'] == category) & (krakenConcat['Sample_Type'] == "H"), "Name"]
-    quar = krakenConcat.loc[(krakenConcat['TaxLevel'] == category) & (krakenConcat['Sample_Type'] == "QD"), "Name"]
+    full = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] =="F"), "Name"]
+    half = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] == "H"), "Name"]
+    quar = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] == "QD"), "Name"]
     setfull = set(full)
     sethalf = set(half)
     setquar = set(quar)
@@ -68,7 +68,7 @@ orderSets = [orderFullSet, orderHalfSet, orderQuarSet]
 phylumFullSet = allTaxaSets['P'][0]
 phylumHalfSet = allTaxaSets['P'][1]
 phylumQuarSet = allTaxaSets['P'][2]
-phylumsets = [phylumFullSet, phylumHalfSet, phylumQuarSet]
+phylumSets = [phylumFullSet, phylumHalfSet, phylumQuarSet]
 
 
 genusFullSet = allTaxaSets['G'][0]
@@ -82,39 +82,65 @@ speciesHalfSet = allTaxaSets['S'][1]
 speciesQuarSet = allTaxaSets['S'][2]
 speciesSets = [speciesFullSet, speciesHalfSet, speciesQuarSet]
 
-v3Phylum = venn3_unweighted(phylumSets, ('D1', 'D0.5', 'D0.25'))
-plt.title('Phylum')
-plt.savefig('krakenPhylumVenn.png')
+# Add option to plot friendlier Venn diagrams for color-blind audiences
+
+v3Phylum = venn3_unweighted(phylumSets, ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3Phylum.set_labels:
+    text.set_fontsize(16)
+for text in v3Phylum.subset_labels:
+    text.set_fontsize(18)
+plt.title('Phylum', fontsize=20)
+plt.savefig('krakenPhylumVennCB.png')
 plt.clf()
 plt.cla()
 
-v3Order = venn3_unweighted(orderSets, ('D1', 'D0.5', 'D0.25'))
-plt.title('Order')
-plt.savefig('krakenOrderVenn.png')
+v3Order = venn3_unweighted(orderSets, ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3Order.set_labels:
+    text.set_fontsize(16)
+for text in v3Order.subset_labels:
+    text.set_fontsize(18)
+plt.title('Order', fontsize=20)
+plt.savefig('krakenOrderVennCB.png')
 plt.clf()
 plt.cla()
 
-v3Family = venn3_unweighted(familySets, ('D1', 'D0.5', 'D0.25'))
-plt.title('Family')
-plt.savefig('krakenFamilyVenn.png')
+v3Family = venn3_unweighted(familySets, ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3Family.set_labels:
+    text.set_fontsize(16)
+for text in v3Family.subset_labels:
+    text.set_fontsize(18)
+plt.title('Family', fontsize=20)
+plt.savefig('krakenFamilyVennCB.png')
 plt.clf()
 plt.cla()
 
-v3Class = venn3_unweighted(classSets, ('D1', 'D0.5', 'D0.25'))
-plt.title('Class')
-plt.savefig('krakenClassVenn.png')
+v3Class = venn3_unweighted(classSets, ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3Class.set_labels:
+    text.set_fontsize(16)
+for text in v3Class.subset_labels:
+    text.set_fontsize(18)
+plt.title('Class', fontsize=20)
+plt.savefig('krakenClassVennCB.png')
 plt.clf()
 plt.cla()
 
-v3Genus = venn3_unweighted(genusSets, ('D1', 'D0.5', 'D0.25'))
-plt.title('Genus')
-plt.savefig('krakenGenusVenn.png')
+v3Genus = venn3_unweighted(genusSets, ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3Genus.set_labels:
+    text.set_fontsize(16)
+for text in v3Genus.subset_labels:
+    text.set_fontsize(18)
+plt.title('Genus',fontsize=20)
+plt.savefig('krakenGenusVennCB.png')
 plt.clf()
 plt.cla()
 
-v3Species = venn3_unweighted(speciesSets, ('D1', 'D0.5', 'D0.25'))
-plt.title('Species')
-plt.savefig('krakenSpeciesVenn.png')
+v3Species = venn3_unweighted(speciesSets, ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3Species.set_labels:
+    text.set_fontsize(16)
+for text in v3Species.subset_labels:
+    text.set_fontsize(18)
+plt.title('Species', fontsize=20)
+plt.savefig('krakenSpeciesVennCB.png')
 plt.clf()
 plt.cla()
 
@@ -151,34 +177,53 @@ geneQuarSet = allAMRCatsSets['Name'][2]
 geneSeqtkSet = allAMRCatsSets['Name'][3]
 geneSets = [geneFullSet, geneHalfSet, geneQuarSet, geneSeqtkSet]
 
-v3class = venn3_unweighted(classSets[0:2], ('D1', 'D0.5', 'D0.25'))
-plt.title('Class')
+v3class = venn3_unweighted(classSets[0:3], ('D1', 'D0.5', 'D0.25'))
+for text in v3class.set_labels:
+    text.set_fontsize(16)
+for text in v3class.subset_labels:
+    text.set_fontsize(18)
+plt.title('Class', fontsize=20)
 plt.savefig('amrClassVenn.png')
 plt.clf()
 plt.cla()
 
-v3mech = venn3_unweighted(mechSets[0:2], ('D1', 'D0.5', 'D0.25'))
-plt.title('Mech')
-plt.savefig('amrMechVenn.png')
+v3class = venn3_unweighted(classSets[0:3], ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3class.set_labels:
+    text.set_fontsize(16)
+for text in v3class.subset_labels:
+    text.set_fontsize(18)
+plt.title('Class', fontsize=20)
+plt.savefig('amrClassVennCB.png')
 plt.clf()
 plt.cla()
 
-v3group = venn3_unweighted(groupSets[0:2], ('D1', 'D0.5', 'D0.25'))
-plt.title('Group')
-plt.savefig('amrGroupVenn.png')
+v3mech = venn3_unweighted(mechSets[0:3], ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3mech.set_labels:
+    text.set_fontsize(16)
+for text in v3mech.subset_labels:
+    text.set_fontsize(18)
+plt.title('Mechanism', fontsize=20)
+plt.savefig('amrMechVennCB.png')
 plt.clf()
 plt.cla()
 
-v3gene = venn3_unweighted(geneSets[0:2], ('D1', 'D0.5', 'D0.25'))
-plt.title('Gene')
-plt.savefig('amrGeneVenn.png')
+v3group = venn3_unweighted(groupSets[0:3], ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3group.set_labels:
+    text.set_fontsize(16)
+for text in v3group.subset_labels:
+    text.set_fontsize(18)
+plt.title('Group', fontsize=20)
+plt.savefig('amrGroupVennCB.png')
 plt.clf()
 plt.cla()
 
-
-v3species = venn3_unweighted(speciesSets[0:2], ('D1', 'D0.5', 'D0.25'))
-plt.title('Species')
-plt.savefig('amrSpeciesVenn.png')
+v3gene = venn3_unweighted(geneSets[0:3], ('D1', 'D0.5', 'D0.25'), set_colors=('y', 'b', 'r'))
+for text in v3gene.set_labels:
+    text.set_fontsize(16)
+for text in v3gene.subset_labels:
+    text.set_fontsize(18)
+plt.title('Gene', fontsize=20)
+plt.savefig('amrGeneVennCB.png')
 plt.clf()
 plt.cla()
 

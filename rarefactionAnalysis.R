@@ -11,8 +11,9 @@ library(purrr)
 library(ggplot2)
 library(metagenomeSeq)
 library(vegan)
+library(scales)
 
-# Source script of utility functions
+# Source script with utility functions
 
 # Will create an R package in the future
 
@@ -237,21 +238,30 @@ krakenAlphaRarefaction <- mclapply(krakenResultsMat, function(x){
   alpha_rarefaction(x, minlevel=0)
 },mc.cores = 10)
 
-krakenAlphaRarefaction2 <- mclapply(krakenResultsMat, function(x){
-  alpha_rarefaction(x, minlevel=0)
-}, mc.cores=10)
-
 amrAlphaRarefaction <- mclapply(amrResultsMat, function(x){
   alpha_rarefaction(x, minlevel=0)
 }, mc.cores=10)
 
-krakenAlphaRarefaction <- lapply(krakenAlphaRarefaction, function(x) data.table(ID=names(x$raw_species_abundance), RawSpeciesAbundance=as.numeric(x$raw_species_abundance), RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), AlphaDiv=as.numeric(x$alphadiv)))
+krakenAlphaRarefaction <- lapply(krakenAlphaRarefaction2, function(x) data.table(
+  ID=names(x$raw_species_abundance), 
+  RawSpeciesAbundance=as.numeric(x$raw_species_abundance), 
+  RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), 
+  AlphaDiv=as.numeric(x$alphadiv), 
+  Shannon=as.numeric(x$shannon), 
+  Evenness=as.numeric(x$evenness)
+))
 
-krakenAlphaRarefaction2 <- lapply(krakenAlphaRarefaction2, function(x) data.table(ID=names(x$raw_species_abundance), RawSpeciesAbundance=as.numeric(x$raw_species_abundance), RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), AlphaDiv=as.numeric(x$alphadiv), Shannon=as.numeric(x$shannon), Evenness=as.numeric(x$evenness)))
-
-amrAlphaRarefaction <- lapply(amrAlphaRarefaction, function(x) data.table(ID=names(x$raw_species_abundance), RawSpeciesAbundance=as.numeric(x$raw_species_abundance), RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), AlphaDiv=as.numeric(x$alphadiv), Shannon=as.numeric(x$shannon), Evenness=as.numeric(x$evenness)))
+amrAlphaRarefaction <- lapply(amrAlphaRarefaction, function(x) data.table(
+  ID=names(x$raw_species_abundance), 
+  RawSpeciesAbundance=as.numeric(x$raw_species_abundance), 
+  RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), 
+  AlphaDiv=as.numeric(x$alphadiv), 
+  Shannon=as.numeric(x$shannon), 
+  Evenness=as.numeric(x$evenness)
+))
 
 amrCategories <- levels(amrResultsTidy$Category)
+
 amrAlphaRarefaction[[1]]$Level <- rep(amrCategories[[1]], length(amrAlphaRarefaction[[1]]$ID))
 amrAlphaRarefaction[[2]]$Level <- rep(amrCategories[[2]], length(amrAlphaRarefaction[[2]]$ID))
 amrAlphaRarefaction[[3]]$Level <- rep(amrCategories[[3]], length(amrAlphaRarefaction[[3]]$ID))
@@ -391,7 +401,6 @@ amrRarCurveDF$Depth <- str_replace(amrRarCurveDF$Depth, "F", "D1")
 amrRarCurveDF$Depth <- str_replace(amrRarCurveDF$Depth, "H", "D0.5")
 amrRarCurveDF$Depth <- str_replace(amrRarCurveDF$Depth, "QD", "D0.25")
 
-
 krakenRarefyDF <- do.call("rbind", krakenRarefyDF)
 krakenRarefyDF$krakenLevel <- row.names(krakenRarefyDF)
 krakenRarefyDF$krakenLevel <- str_extract(krakenRarefyDF$krakenLevel, "^.\\.")
@@ -418,7 +427,7 @@ krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, 
 
 # Slice dataset by AMR level
 
-# Remove seqtk data (not needed for now)
+# Remove seqtk datacolor=Sample_type (not needed for now)
 
 amrRarefiedConcat <- amrRarefiedConcat %>%
   filter(Depth != "seqtk")
@@ -470,10 +479,6 @@ amrGeneRarCurve <- amrRarefiedGene %>%
 
 # Plot aggregated rarefaction curves
 
-krakenRarefiedMean <- krakenRarefyDF %>%
-  group_by(Depth,Subsample, krakenLevel) %>%
-  summarise(MeanCounts = mean(value))
-
 krakenRarPhylum <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "P",]
 krakenRarClass <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "C",]
 krakenRarOrder <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "O",]
@@ -488,6 +493,8 @@ krakenAllFamily <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "F",]
 krakenAllGenus <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "G",]
 krakenAllSpecies <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "S",]
 
+# Same colour palette as the matplotlib_venn default color palette
+
 vennPalette <- c("#F8766D", "#00BA38", "#619CFF")
 vennPalette <- rev(vennPalette)
 
@@ -498,9 +505,11 @@ vennPalette <- rev(vennPalette)
 krakenAllPhylumRarCurve <- krakenAllPhylum %>%
   ggplot(aes(Subsample, value, color=Depth)) +
   geom_point(alpha=0.6) + 
-  xlab = "Number of Phyla" 
-  scale_fill_manual(c(vennPalette)) +
-  facet_grid(. ~ Depth)
+  xlab = "Number of Phyla" +
+  scale_color_manual(vennPalette) +
+  facet_grid(. ~ Depth) +
+  tras_coord(x="log10")
+  
   
 krakenAllClassRarCurve <- krakenAllClass %>%
   ggplot(aes(Number_of_Reads, Counts, color=Depth)) +
@@ -534,7 +543,7 @@ krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "F", "Fami
 krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "G", "Genera")
 krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "S", "Species")
 
-krakenAllList <- krakenRarefyDF %>% 
+krakenAllRarCurveList <- krakenRarefyDF %>% 
   split(.$krakenLevel)
 
 amrAllList <- amrRarCurveDF %>% 
@@ -570,7 +579,7 @@ amrAlphaRarefactionDF$Level <- factor(amrAlphaRarefactionDF$Level,
                                  levels = c('Class', 'Mechanism', 'Group', 'Gene'))
 
 
-krakenAllList <- krakenAlphaDivDF %>% 
+krakenAllAlphaDivList <- krakenAlphaDivDF %>% 
   split(.$krakenLevel)
 
 amrAllRarCurves <- amrAllList %>%
@@ -578,7 +587,7 @@ amrAllRarCurves <- amrAllList %>%
     amrRarefactionCurve(x)
   })
 
-krakenAllRarCurvesLarger <- krakenAllList %>%
+krakenAllRarCurvesLarger <- krakenAllRarCurveList %>%
   map(function(x){
     krakenRarefactionCurve(x)
   })
@@ -632,7 +641,33 @@ amrReadsvsHits <- cor(x = amrReadstoHitRatio$Number_of_reads, amrReadstoHitRatio
 
 amrReadsvsHitsCorTest <- cor.test(x = amrReadstoHitRatio$Number_of_reads, amrReadstoHitRatio$AMR_hits, method = "spearman")
 
-amrReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(Number_of_reads, AMR_hits, color=Sample_type)) + geom_point(alpha=0.4, size=4) + geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5)
+amrReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(Number_of_reads, AMR_hits)) + 
+  geom_point(aes(fill=Sample_type), alpha=0.6, size=10, pch=21, color="grey")+ 
+  geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
+
+amrReadsvsHitsCor +
+  ylab("Number of AMR Hits\n") +
+  xlab("\nNumber of reads") +
+  theme(axis.text.y=element_text(size=35),
+        axis.title.y=element_text(size=44),
+        axis.text.x=element_text(size=35),
+        axis.title.x=element_text(size=44),
+        legend.title=element_text(size=36),
+        legend.text=element_text(size=36, vjust=0.5),
+        legend.key = element_rect(size = 2),
+        legend.key.size = unit(2, "lines"),
+        legend.spacing = unit(0.2,"lines"),
+        panel.background = element_rect(fill = "grey90", colour = "grey80")) +
+  scale_fill_manual(values=cbPalette,
+                     name="Sequencing Depth\n")
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/amrReadsvsHitsCorCBScheme.png', 
+       width=14, 
+       height=8.50,
+       units="in")
+
+amrReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(Number_of_reads, AMR_hits)) + 
+  geom_point(alpha=0.4, size=4) + 
+  geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5)
 
 amrReadsvsHitsCor + 
   ylab("Number of AMR Hits\n") + 
@@ -685,7 +720,7 @@ krakenAlphaRarefactionLevels <- krakenAlphaRarefaction2DF %>%
 
 krakenRichnessKruskal <- krakenAlphaRarefactionLevels %>%
   map(function(x){
-    kruskal.test(RawSpeciesAbundance ~ Depth, data = x)
+    kruskal.test(RawSpeccolor=Sample_typeiesAbundance ~ Depth, data = x)
     })
 
 krakenRichnessPosthoc <- krakenAlphaRarefactionLevels %>%
@@ -714,11 +749,14 @@ krakenPhylumSums <- krakenPhylumResults %>%
   summarise(MeanHits = mean(CladeReads)) %>%
   group_by(SampleID) %>%
   summarise(SumHits = sum(MeanHits))
-  
+
+
+cbPalette <- c(colorschemes$Categorical.12[4], colorschemes$Categorical.12[8], colorschemes$Categorical.12[12])
+
 krakenReadsvsHitsCorTest <- cor.test(x = krakenReadstoHitRatio$Reads, krakenReadstoHitRatio$KrakenHits, method = "spearman")
 
-krakenReadsvsHitsCor <- ggplot(krakenReadstoHitRatio, aes(Reads, KrakenHits, color=Sample_type)) + 
-  geom_point(alpha=0.4, size=4) + 
+krakenReadsvsHitsCor <- ggplot(krakenReadstoHitRatio, aes(Reads, KrakenHits)) + 
+  geom_point(aes(fill=Sample_type), alpha=0.6, size=10, pch=21, color="grey")+ 
   geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
 
 krakenReadsvsHitsCor +
@@ -732,6 +770,8 @@ krakenReadsvsHitsCor +
         legend.text=element_text(size=36, vjust=0.5),
         legend.key = element_rect(size = 2),
         legend.key.size = unit(2, "lines"),
-        legend.spacing = unit(0.2,"lines")) +
-  scale_color_manual(values=vennPalette,
-                     name="Sample type\n")
+        legend.spacing = unit(0.2,"lines"),
+        panel.background = element_rect(fill = "grey90", colour = "grey80")) +
+  scale_fill_manual(values=cbPalette,
+                     name="Sequencing Depth\n")
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/krakenReadsvsHitsCorCBScheme.png', width=14, height=8.50)
