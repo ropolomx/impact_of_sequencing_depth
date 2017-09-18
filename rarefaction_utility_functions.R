@@ -165,7 +165,7 @@ samplesByLevel <- function(rarefiedData) {
 #' @examples
 krakenRarefactionCurve <- function(taxSubset){
     rarefactionCurve <- ggplot(taxSubset, aes(Subsample, value, color=Depth)) +
-    geom_point(aes(alpha=0.2, size=0.5, group=Sample)) + 
+    geom_point(aes(alpha=0.2, group=Sample)) + 
     theme(strip.text.x=element_text(size=30),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
@@ -178,10 +178,10 @@ krakenRarefactionCurve <- function(taxSubset){
     xlab("\nNumber of reads") +
     ylab(paste('Number ', 'of ', taxSubset$krakenLevel, '\n')) +
     ggtitle(paste(taxSubset$krakenLevel, '\n')) +
-    scale_color_manual(values=vennPalette) +
+    scale_color_manual(values=cbPalette) +
     #scale_y_log10() +
-    scale_x_continuous(labels=scientific) +
-    facet_grid(. ~ Depth)
+    scale_x_continuous(labels=scientific)
+    #facet_grid(. ~ Depth)
 }
 
 #' Title
@@ -262,8 +262,8 @@ amrAlphaDiv <- function(amrSubset){
           #legend.text=element_text(size=36, vjust=0.5),
           plot.title=element_text(size=50, hjust=0.5)) +
     xlab("Depth") +
-    ylab("Inverse Simpson's Index") +
-    ggtitle('Alpha Diversity by Depth for Rarefied data\nInverse Simpson Index') +
+    ylab("Inverse Simpson's Index") + 
+    #ggtitle('Alpha Diversity by Depth for Rarefied data\nInverse Simpson Index') +
     scale_color_manual(values=cbPalette) +
     facet_wrap( ~ Level, nrow=2, scales = "free_y")
 }
@@ -293,9 +293,9 @@ amrRawSpeciesRich <- function(amrSubset){
           #legend.text=element_text(size=36, vjust=0.5),
           plot.title=element_text(size=50, hjust=0.5)) +
     xlab("Depth") +
-    ylab("Unique Taxa") +
-    ggtitle('Species Richness by Depth for Raw Data') +
-    scale_color_manual(values=vennPalette) +
+    ylab("Number of Unique AMR Categories") +
+    ggtitle('AMR Category Richness by Depth for Raw Data') +
+    scale_color_manual(values=cbPalette) +
     facet_wrap(~ Level, nrow=2, scales = "free_y")
 }
 
@@ -312,9 +312,9 @@ krakenRawSpeciesRich <- function(taxSubset){
           #legend.text=element_text(size=36, vjust=0.5),
           plot.title=element_text(size=50, hjust=0.5)) +
     xlab("Depth") +
-    ylab("Unique Taxa\n") +
+    ylab("Number of Unique Taxa\n") +
     ggtitle('Species Richness by Depth for Raw Data\n') +
-    scale_color_manual(values=vennPalette) +
+    scale_color_manual(values=cbPalette) +
     facet_wrap(~ Level, nrow=2, scales = "free_y")
 }
 
