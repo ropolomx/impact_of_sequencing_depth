@@ -521,17 +521,32 @@ krakenAllRarCurvesLarger <- krakenAllRarCurveList %>%
 amrAllAlphaBoxPlots <- amrAlphaRarefactionDF %>%
   amrAlphaDiv()
 
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity/amrAlphaDiversityCB.png', 
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
 amrAllSpRawBoxPlots <- amrAlphaRarefactionDF %>%
     amrRawSpeciesRich()
 
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity/amrSpeciesRichnessCB.png',
+       plot = amrAllSpRawBoxPlots,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
 krakenAllAlphaBoxPlots <- krakenAlphaRarefactionDF %>%
     krakenAlphaDiv()
+
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/')
 
 krakenAllAlphaBoxPlots2 <- krakenAlphaRarefaction2DF %>%
     krakenAlphaDiv()
 
 krakenAllSpRawBoxPlots <- krakenAlphaRarefaction2DF %>%
   krakenRawSpeciesRich()
+
+
 
 # AMR rarefaction curves
 
@@ -567,8 +582,16 @@ amrReadsvsHits <- cor(x = amrReadstoHitRatio$Number_of_reads, amrReadstoHitRatio
 amrReadsvsHitsCorTest <- cor.test(x = amrReadstoHitRatio$Number_of_reads, amrReadstoHitRatio$AMR_hits, method = "spearman")
 
 amrReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(Number_of_reads, AMR_hits)) + 
-  geom_point(aes(fill=Sample_type), alpha=0.6, size=10, pch=21, color="grey")+ 
-  geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
+  geom_point(aes(fill=Sample_type), 
+             alpha=0.6, 
+             size=10, 
+             pch=21, 
+             color="grey")+ 
+  geom_smooth(aes(group=1, weight=0.2), 
+              method="lm", 
+              se=FALSE, 
+              colour="grey", 
+              alpha=0.5) 
 
 amrReadsvsHitsCor +
   ylab("Number of AMR Hits\n") +
@@ -676,7 +699,7 @@ krakenPhylumSums <- krakenPhylumResults %>%
   summarise(SumHits = sum(MeanHits))
 
 
-cbPalette <- c(colorschemes$Categorical.12[4], colorschemes$Categorical.12[8], colorschemes$Categorical.12[12])
+cbPalette <- c("#FFCD48", colorschemes$Categorical.12[8], colorschemes$Categorical.12[12])
 
 krakenReadsvsHitsCorTest <- cor.test(x = krakenReadstoHitRatio$Reads, krakenReadstoHitRatio$KrakenHits, method = "spearman")
 

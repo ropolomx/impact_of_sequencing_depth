@@ -165,7 +165,7 @@ samplesByLevel <- function(rarefiedData) {
 #' @examples
 krakenRarefactionCurve <- function(taxSubset){
     rarefactionCurve <- ggplot(taxSubset, aes(Subsample, value, color=Depth)) +
-    geom_point(aes(alpha=0.2, group=Sample)) + 
+    geom_point(aes(alpha=0.8, group=Sample)) + 
     theme(strip.text.x=element_text(size=30),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
@@ -251,20 +251,20 @@ krakenAlphaDiv <- function(taxSubset){
 #' @examples
 amrAlphaDiv <- function(amrSubset){
   alphaDivBoxPlot<- ggplot(amrSubset, aes(Depth, AlphaDiv, color=Depth)) +
-    geom_boxplot() +
-    theme(strip.text.x=element_text(size=30),
+    geom_boxplot(size=1.25) +
+    theme(strip.text.x=element_text(size=35),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
-          axis.title.x=element_text(size=44),
-          axis.title.y=element_text(size=44),
+          axis.title.x=element_text(size=42),
+          axis.title.y=element_text(size=42),
           legend.position="none",
           #legend.title=element_text(size=36),
           #legend.text=element_text(size=36, vjust=0.5),
           plot.title=element_text(size=50, hjust=0.5)) +
     xlab("Depth") +
-    ylab("Inverse Simpson's Index") + 
+    ylab("Inverse Simpson's Index\n") + 
     #ggtitle('Alpha Diversity by Depth for Rarefied data\nInverse Simpson Index') +
-    scale_color_manual(values=cbPalette) +
+    scale_color_manual(values=rev(cbPalette)) +
     facet_wrap( ~ Level, nrow=2, scales = "free_y")
 }
 
@@ -282,23 +282,31 @@ amrAlphaDiv <- function(amrSubset){
 #' @examples
 amrRawSpeciesRich <- function(amrSubset){
   alphaDivBoxPlot<- ggplot(amrSubset, aes(Depth, RawSpeciesAbundance, color=Depth)) +
-    geom_boxplot(size=1) + 
-    theme(strip.text.x=element_text(size=30),
+    geom_boxplot(size=1.25)+ 
+    theme(strip.text.x=element_text(size=35),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
-          axis.title.x=element_text(size=44),
-          axis.title.y=element_text(size=44),
+          axis.title.x=element_text(size=42),
+          axis.title.y=element_text(size=42),
           legend.position="none",
           #legend.title=element_text(size=36),
           #legend.text=element_text(size=36, vjust=0.5),
           plot.title=element_text(size=50, hjust=0.5)) +
     xlab("Depth") +
     ylab("Number of Unique AMR Categories") +
-    ggtitle('AMR Category Richness by Depth for Raw Data') +
-    scale_color_manual(values=cbPalette) +
+    #ggtitle('AMR Category Richness by Depth for Raw Data') +
+    scale_color_manual(values=rev(cbPalette)) +
     facet_wrap(~ Level, nrow=2, scales = "free_y")
 }
 
+#' Title
+#'
+#' @param taxSubset 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 krakenRawSpeciesRich <- function(taxSubset){
   alphaDivBoxPlot<- ggplot(taxSubset, aes(Depth, RawSpeciesAbundance, color=Depth)) +
     geom_boxplot(size=1) + 
@@ -310,11 +318,12 @@ krakenRawSpeciesRich <- function(taxSubset){
           legend.position="none",
           #legend.title=element_text(size=36),
           #legend.text=element_text(size=36, vjust=0.5),
-          plot.title=element_text(size=50, hjust=0.5)) +
+          plot.title=element_text(size=50, hjust=0.5),
+          panel.background = element_rect(fill = "grey90", colour = "grey80")) +
     xlab("Depth") +
     ylab("Number of Unique Taxa\n") +
-    ggtitle('Species Richness by Depth for Raw Data\n') +
-    scale_color_manual(values=cbPalette) +
+    #ggtitle('Species Richness by Depth for Raw Data\n') +
+    scale_color_manual(values=rev(cbPalette)) +
     facet_wrap(~ Level, nrow=2, scales = "free_y")
 }
 
