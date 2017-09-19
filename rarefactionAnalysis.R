@@ -535,18 +535,23 @@ ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alpha
        height = 8.50,
        units = "in")
 
-krakenAllAlphaBoxPlots <- krakenAlphaRarefactionDF %>%
+krakenAllAlphaBoxPlots <- krakenAlphaRarefaction2DF %>%
     krakenAlphaDiv()
 
-ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/')
-
-krakenAllAlphaBoxPlots2 <- krakenAlphaRarefaction2DF %>%
-    krakenAlphaDiv()
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity/krakenAlphaDivCB.png',
+       plot = krakenAllAlphaBoxPlots,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
 
 krakenAllSpRawBoxPlots <- krakenAlphaRarefaction2DF %>%
   krakenRawSpeciesRich()
 
-
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity/krakenSpRichnessCB.png',
+       plot = krakenAllSpRawBoxPlots,
+       width = 10.50,
+       height = 8.50,
+       units="in")
 
 # AMR rarefaction curves
 
