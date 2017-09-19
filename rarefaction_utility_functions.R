@@ -1,7 +1,7 @@
 #' Summarize AMR results by levels
 #' 
-#' @param X A tidy dataset.
-#' @param amrLevel A level of the MEGARes database. For example: class, group 
+#' @param X A tidy AMR Coverage Sampler dataset.
+#' @param amrLevel An AMR level of the MEGARes database. For example: class, group 
 #' or mechanism
 #' 
 #' @return Summarized results of \code{X} by \code{amrLevel} 
@@ -15,48 +15,32 @@ summarizeAMRlevels <- function(X, amrLevel) {
   return(amrResultsSummarised)
 }
 
-#' Summarize results by 
+#' Summarize AMR results by depth
 #'
-#' @param X 
+#' @param X A tidy dataset with AMR results from Coverage Sampler
 #'
-#' @return
+#' @return Summarized results of \code{X} by AMR category
 #' @export
 #'
-#' @examples Summarized results of \code{X} by \code{}
+#' @examples 
  
-summarizeAMRbySample <- function(X) {
-  amrResultsSummarised <- X %>% 
-    group_by_('Sample','LevelName') %>% 
-    summarise(Hits=sum(Hits_Seen))
-  return(amrResultsSummarised)
-}
-
-#' Summarize by depth
-#'
-#' @param X 
-#'
-#' @return
-#' @export
-#'
-#' @examples Summarized results of \code{X} by sample depth
- 
-summarizeAMRbyDepth <- function(X) {
+summarizeAMRbyCategory <- function(X) {
   amrResultsSummarised <- X %>% 
     group_by_('Sample', 'CategoryName') %>% 
     summarise(SumHits=sum(Hits))
   return(amrResultsSummarised)
 }
 
-#' Summarize by depth
+#' Summarize Kraken by depth
 #'
-#' @param X 
+#' @param X A tidy Kraken report dataset 
 #'
-#' @return
+#' @return Summarized dataframe with the sum of hits by Sample and TaxID
 #' @export
 #'
-#' @examples Summarized results of \code{X} by sample depth
+#' @examples
  
-summarizeKrakenbyDepth <- function(X) {
+summarizeKrakenbyTaxID <- function(X) {
   krakenResultsSummarised <- X %>% 
     group_by_('Sample', 'TaxID') %>% 
     summarise(SumHits=sum(CladeReads))
@@ -67,7 +51,7 @@ summarizeKrakenbyDepth <- function(X) {
 #'
 #' @param summarizedAMR 
 #'
-#' @return
+#' @return Summarized AMR results in wide format
 #' @export
 #'
 #' @examples
@@ -178,7 +162,7 @@ krakenRarefactionCurve <- function(taxSubset){
     xlab("\nNumber of reads") +
     ylab(paste('Number ', 'of ', taxSubset$krakenLevel, '\n')) +
     ggtitle(paste(taxSubset$krakenLevel, '\n')) +
-    scale_color_manual(values=cbPalette) +
+    scale_color_manual(values=rev(cbPalette)) +
     #scale_y_log10() +
     scale_x_continuous(labels=scientific)
     #facet_grid(. ~ Depth)
@@ -224,20 +208,20 @@ amrRarefactionCurve <- function(amrSubset){
 
 krakenAlphaDiv <- function(taxSubset){
   alphaDivBoxPlot<- ggplot(taxSubset, aes(Depth, AlphaDiv, color=Depth)) +
-    geom_boxplot() +
-    theme(strip.text.x=element_text(size=30),
+    geom_boxplot(size=1.25) +
+    theme(strip.text.x=element_text(size=35),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
-          axis.title.x=element_text(size=44),
-          axis.title.y=element_text(size=44),
+          axis.title.x=element_text(size=42),
+          axis.title.y=element_text(size=42),
           legend.position="none",
           #legend.title=element_text(size=36),
           #legend.text=element_text(size=36, vjust=0.5),
           plot.title=element_text(size=50, hjust=0.5)) +
     xlab("Depth") +
-    ylab("Inverse Simpson's Index") +
-    ggtitle('Alpha Diversity by Depth for Rarefied data\nInverse Simpson Index') +
-    scale_color_manual(values=cbPalette) +
+    ylab("Inverse Simpson's Index\n") +
+    #ggtitle('Alpha Diversity by Depth for Rarefied data\nInverse Simpson Index') +
+    scale_color_manual(values=rev(cbPalette)) +
     facet_wrap( ~ Level, nrow=2, scales = "free_y")
 }
 
@@ -293,7 +277,7 @@ amrRawSpeciesRich <- function(amrSubset){
           #legend.text=element_text(size=36, vjust=0.5),
           plot.title=element_text(size=50, hjust=0.5)) +
     xlab("Depth") +
-    ylab("Number of Unique AMR Categories") +
+    ylab("Number of Unique\nAMR Categories\n") +
     #ggtitle('AMR Category Richness by Depth for Raw Data') +
     scale_color_manual(values=rev(cbPalette)) +
     facet_wrap(~ Level, nrow=2, scales = "free_y")
@@ -309,7 +293,7 @@ amrRawSpeciesRich <- function(amrSubset){
 #' @examples
 krakenRawSpeciesRich <- function(taxSubset){
   alphaDivBoxPlot<- ggplot(taxSubset, aes(Depth, RawSpeciesAbundance, color=Depth)) +
-    geom_boxplot(size=1) + 
+    geom_boxplot(size=1.25) + 
     theme(strip.text.x=element_text(size=30),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),

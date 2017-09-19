@@ -21,7 +21,6 @@ source('rarefaction_utility_functions.R')
 
 # Read AMR and Kraken data
 
-# Another alternative
 # Results generated with Coverage Sampler and filtered with Python-Pandas
 # Filtering involved keeping results with gene fraction >= 75% and 
 # removing all those results with genes that require SNP confirmation.
@@ -32,8 +31,9 @@ amrReadstoHitRatio <- read_tsv('~/amr/2-4-8_results/2_4_8_study_RZ/hitToReadRati
 
 # Read Kraken concatenated and filtered file (no Eukaryotes, and no PhiX)
 
-krakenResultsFiltered <- read.table('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/allKraken_FHQ/kraken_filtered/krakenConcat.tsv', sep="\t", header=TRUE)
-
+krakenResultsFiltered <- read.table('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/allKraken_FHQ/kraken_filtered/krakenConcat.tsv', 
+                                    sep="\t", 
+                                    header=TRUE)
 
 # Remove D0.25_seqtk data from filtered data frame
 
@@ -74,31 +74,40 @@ amrCategories <- levels(amrResultsTidy$Category)
 
 krakenTaxa <- levels(krakenResultsFiltered$TaxRank)
 
-# Split tidy data frame of AMR results according to the Level vector
+# Split tidy data frame of AMR results by AMR category
+# Use the names of the AMR categories as names of the elements of the list
 
 amrResultsList <- amrResultsTidy %>% 
   split(.$Category) %>% #splitting dataframe using base R but with purrr's piping
   set_names(nm=amrCategories)
 
+# Split tidy data frame of Kraken results by taxonomic rank
+# Use the names of the taxonomic ranks as names of the elements of the list
+
 krakenResultsList <- krakenResultsFiltered %>% 
-  split(.$TaxRank) %>% #splitting dataframe using base R but with purrr's piping
+  split(.$TaxRank) %>% 
   set_names(nm=krakenTaxa)
+
 # Summarize results: calculate mean by Depth
 
 amrResultsSummary <- lapply(amrResultsList, function(x){
-  summarizeAMRbyDepth(x)
+  summarizeAMRbyCategory(x)
 })
 
 krakenResultsSummary <- lapply(krakenResultsList, function(x){
-  summarizeKrakenbyDepth(x)
+  summarizeKrakenbyTaxID(x)
 })
 
 # Convert AMR results to wide format
+
+# Potentially can use the same function and a list/vector of AMR and Kraken results
+# to avoid duplication
 
 amrResultsWide <- lapply(amrResultsSummary, function(x){
   widenAMR(x)
 })
 
+# Convert Kraken results to wide format
 
 krakenResultsWide <- lapply(krakenResultsSummary, function(x){
   widenKraken(x)
@@ -521,7 +530,8 @@ krakenAllRarCurvesLarger <- krakenAllRarCurveList %>%
 amrAllAlphaBoxPlots <- amrAlphaRarefactionDF %>%
   amrAlphaDiv()
 
-ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity/amrAlphaDiversityCB.png', 
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity/amrAlphaDiversityCB.png',
+       plot = amrAllAlphaBoxPlots,
        width = 10.50,
        height = 8.50,
        units = "in")
