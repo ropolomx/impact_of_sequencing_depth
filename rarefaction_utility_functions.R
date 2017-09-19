@@ -199,7 +199,7 @@ amrRarefactionCurve <- function(amrSubset){
 
 #' Title
 #'
-#' @param taxSubset https://outlook.office.com/owa/
+#' @param taxSubset
 #'
 #' @return
 #' @export
@@ -251,10 +251,6 @@ amrAlphaDiv <- function(amrSubset){
     scale_color_manual(values=rev(cbPalette)) +
     facet_wrap( ~ Level, nrow=2, scales = "free_y")
 }
-
-
-
-
 
 #' Title
 #'
@@ -317,7 +313,7 @@ krakenRawSpeciesRich <- function(taxSubset){
 #' 
 #' Written by Steven Lakin (Colorado State University)
 #'
-#' @param X 
+#' @param X Microbiome or resistome results in matrix format
 #' @param method 
 #'
 #' @return
@@ -342,6 +338,14 @@ alpha_rarefaction <- function(X, minlevel, method='invsimpson') {
 }
 
 
+#' Boxplots of Pielou's evenness with Kraken results
+#'
+#' @param taxSubset 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 krakenEvenness <- function(taxSubset){
   alphaDivBoxPlot<- ggplot(taxSubset, aes(Depth, Evenness, color=Depth)) +
     geom_boxplot(size=1) +
@@ -363,6 +367,15 @@ krakenEvenness <- function(taxSubset){
     facet_wrap(~ Level, nrow=2, scales = "free_y")
 }
 
+#' krakenShannon: Boxplots of Shannon's Index of diversity calculated for
+#' Kraken results
+#'
+#' @param taxSubset A dataset of Kraken hits for a given taxon
+#'
+#' @return
+#' @export
+#'
+#' @examples
 krakenShannon <- function(taxSubset){
   alphaDivBoxPlot<- ggplot(taxSubset, aes(Depth, Shannon, color=Depth)) +
     geom_boxplot(size=1) +
