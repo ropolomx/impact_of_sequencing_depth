@@ -315,7 +315,7 @@ krakenRawSpeciesRich <- function(taxSubset){
 #' rarefied species count, and alpha diversity measures
 #' for each sample in the m x n matrix, m = features, n = samples
 #' 
-#' Written by Steven Lakin Colorado State University
+#' Written by Steven Lakin (Colorado State University)
 #'
 #' @param X 
 #' @param method 

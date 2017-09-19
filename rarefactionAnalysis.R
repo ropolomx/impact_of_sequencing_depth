@@ -272,6 +272,60 @@ krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "F", "D1")
 krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "H", "D0.5")
 krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "QD", "D0.25")
 
+amrRarCurveDF$AMRLevel <- factor(amrRarCurveDF$AMRLevel, 
+                                  levels = c('Class', 'Mechanism', 'Group', 'Gene'))
+
+amrAlphaRarefactionDF$Level <- factor(amrAlphaRarefactionDF$Level, 
+                                 levels = c('Class', 'Mechanism', 'Group', 'Gene'))
+
+
+# Attempt to more functional programming
+ 
+krakenRarefyDF <- krakenRarefyDF %>% filter(!krakenLevel %in% c("-", "D"))
+
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "P", "Phyla")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "C", "Classes")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "O", "Orders")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "F", "Families")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "G", "Genera")
+krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "S", "Species")
+
+
+amrAllList <- amrRarCurveDF %>% 
+  split(.$AMRLevel)
+
+
+amrAllRarCurves <- amrAllList %>%
+  map(function(x){
+    amrRarefactionCurve(x)
+  })
+
+krakenAllRarCurveList <- krakenRarefyDF %>% 
+  split(.$krakenLevel)
+
+krakenAllRarCurvesLarger <- krakenAllRarCurveList %>%
+  map(function(x){
+    krakenRarefactionCurve(x)
+  })
+
+foreach(i=krakenAllRarCurvesLarger) %do%
+  ggsave(filename=paste('rarefaction',unique(i$data$krakenLevel),'CB','noFacet','.png', sep='', collapse=''),
+         path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/rarefaction',
+         plot = i,
+         height=8.50,
+         width=10.50,
+         units="in",
+         device="png")
+
+amrAllAlphaBoxPlots <- amrAlphaRarefactionDF %>%
+  amrAlphaDiv()
+
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity/amrAlphaDiversityCB.png',
+       plot = amrAllAlphaBoxPlots,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
 
 # Alpha Diversity and Species Richness calculations -----------------------
 
@@ -382,58 +436,8 @@ krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, 
 krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, "H", "D0.5")
 krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, "QD", "D0.25")
 
-# Write a function!!!
 
-# Make all of this functional programming!!!
-
-krakenAllPhylumRarCurve <- krakenAllPhylum %>%
-  ggplot(aes(Subsample, value, color=Depth)) +
-  geom_point(alpha=0.6) + 
-  xlab = "Number of Phyla" +
-  scale_color_manual(vennPalette) +
-  facet_grid(. ~ Depth) +
-  tras_coord(x="log10")
-  
-  
-krakenAllClassRarCurve <- krakenAllClass %>%
-  ggplot(aes(Number_of_Reads, Counts, color=Depth)) +
-  geom_point(alpha=0.6) +
-  scale_fill_manual(c(vennPalette))
-
-krakenAllOrderRarCurve <- krakenAllOrder %>%
-  ggplot(aes(Subsample, value, color=Depth)) +
-  geom_point(alpha=0.7) +
-
-krakenAllFamilyRarCurve <- krakenAllFamily %>%
-  ggplot(aes(Subsample, value, color=Depth)) +
-  geom_point(alpha=0.7) +
-
-krakenAllGenusRarCurve <- krakenAllGenus %>%
-  ggplot(aes(Subsample, value, color=Depth)) +
-  geom_point(alpha=0.7) +
-
-krakenAllSpeciesRarCurve <- krakenAllSpecies %>%
-  ggplot(aes(Subsample, value, color=Depth)) +
-  geom_point(alpha=0.7) +
-
-# Attempt to more functional programming
- 
-krakenRarefyDF <- krakenRarefyDF %>% filter(!krakenLevel %in% c("-", "D"))
-
-krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "P", "Phyla")
-krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "C", "Classes")
-krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "O", "Orders")
-krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "F", "Families")
-krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "G", "Genera")
-krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "S", "Species")
-
-krakenAllRarCurveList <- krakenRarefyDF %>% 
-  split(.$krakenLevel)
-
-amrAllList <- amrRarCurveDF %>% 
-  split(.$AMRLevel)
-
-# Alpha Diversity
+# Alpha Diversity and Species Richness boxplots ---------------------------
 
 krakenAlphaRarefactionDF <- krakenAlphaRarefactionDF %>% filter(!Level %in% c("-", "D"))
 krakenAlphaRarefaction2DF <- krakenAlphaRarefaction2DF %>% filter(!Level %in% c("-", "D"))
@@ -453,51 +457,18 @@ krakenAlphaRarefaction2DF$Level <- str_replace(krakenAlphaRarefaction2DF$Level, 
 krakenAlphaRarefaction2DF$Level <- str_replace(krakenAlphaRarefaction2DF$Level, "S", "Species")
 
 krakenAlphaRarefactionDF$Level <- factor(krakenAlphaRarefactionDF$Level, 
-                                  levels = c('Phyla', 'Classes', 'Orders', 'Families', 'Genera', 'Species'))
-
-
-amrRarCurveDF$AMRLevel <- factor(amrRarCurveDF$AMRLevel, 
-                                  levels = c('Class', 'Mechanism', 'Group', 'Gene'))
-
-amrAlphaRarefactionDF$Level <- factor(amrAlphaRarefactionDF$Level, 
-                                 levels = c('Class', 'Mechanism', 'Group', 'Gene'))
-
-
-krakenAllAlphaDivList <- krakenAlphaDivDF %>% 
-  split(.$krakenLevel)
-
-amrAllRarCurves <- amrAllList %>%
-  map(function(x){
-    amrRarefactionCurve(x)
-  })
-
-krakenAllRarCurvesLarger <- krakenAllRarCurveList %>%
-  map(function(x){
-    krakenRarefactionCurve(x)
-  })
-
-foreach(i=krakenAllRarCurvesLarger) %do%
-  ggsave(filename=paste('rarefaction',unique(i$data$krakenLevel),'CB','noFacet','.png', sep='', collapse=''),
-         path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/rarefaction',
-         plot = i,
-         height=8.50,
-         width=10.50,
-         units="in",
-         device="png")
-
-amrAllAlphaBoxPlots <- amrAlphaRarefactionDF %>%
-  amrAlphaDiv()
-
-ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity/amrAlphaDiversityCB.png',
-       plot = amrAllAlphaBoxPlots,
-       width = 10.50,
-       height = 8.50,
-       units = "in")
+                                  levels = c('Phyla', 
+                                             'Classes', 
+                                             'Orders', 
+                                             'Families', 
+                                             'Genera', 
+                                             'Species'))
 
 amrAllSpRawBoxPlots <- amrAlphaRarefactionDF %>%
     amrRawSpeciesRich()
 
-ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity/amrSpeciesRichnessCB.png',
+ggsave(filename = 'amrSpeciesRichnessCB.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity',
        plot = amrAllSpRawBoxPlots,
        width = 10.50,
        height = 8.50,
@@ -506,7 +477,8 @@ ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alpha
 krakenAllAlphaBoxPlots <- krakenAlphaRarefaction2DF %>%
     krakenAlphaDiv()
 
-ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity/krakenAlphaDivCB.png',
+ggsave(filename = 'krakenAlphaDivCB.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity',
        plot = krakenAllAlphaBoxPlots,
        width = 10.50,
        height = 8.50,
@@ -515,33 +487,12 @@ ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity/
 krakenAllSpRawBoxPlots <- krakenAlphaRarefaction2DF %>%
   krakenRawSpeciesRich()
 
-ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity/krakenSpRichnessCB.png',
+ggsave(filename = 'krakenSpRichnessCB.png' ,
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity',
        plot = krakenAllSpRawBoxPlots,
        width = 10.50,
        height = 8.50,
        units="in")
-
-# AMR rarefaction curves
-
-# TODO: change code to ggsave
-
-png(filename = "amrClassRarefaction2.png", width=1962, height = 1297)
-print(amrAllRarCurves[[1]])
-dev.off()
-
-png(filename = "amrGeneRarefaction2.png", width=1962, height = 1297)
-print(amrAllRarCurves[[2]])
-dev.off()
-
-
-png(filename = "amrGroupRarefaction2.png", width=1962, height = 1297)
-print(amrAllRarCurves[[3]])
-dev.off()
-
-png(filename = "amrMechanismRarefaction2.png", width=1962, height = 1297)
-print(amrAllRarCurves[[4]])
-dev.off()
-
 
 # Correlation plots -------------------------------------------------------
 
@@ -609,7 +560,6 @@ amrReadsvsHitsCor +
                     name="Sample type\n")
 
 # Generating kraken correlation plot
-
 
 krakenReadsvsHitsCorTest <- cor.test(x = krakenReadstoHitRatio$Reads, krakenReadstoHitRatio$KrakenHits, method = "spearman")
 
