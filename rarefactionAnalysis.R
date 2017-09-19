@@ -18,6 +18,23 @@ library(scales)
 
 source('rarefaction_utility_functions.R')
 
+
+# Colour palettes ---------------------------------------------------------
+
+# Same colour palette as the matplotlib_venn default color palette
+# Consider adding them to the utility functions script
+
+vennPalette <- c("#F8766D", "#00BA38", "#619CFF")
+vennPalette <- rev(vennPalette)
+
+# Colourblind friendly palette
+
+cbPalette <- c("#FFCD48", # Mango from Crayola palette
+               dichromat::colorschemes$Categorical.12[8], # Blue from dichromat package
+                 dichromat::colorschemes$Categorical.12[12]) # Red from dichromat package
+
+
+
 # Load and filter AMR and Kraken data -------------------------------------
 
 # Results generated with Coverage Sampler and filtered with Python-Pandas
@@ -57,7 +74,6 @@ amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "full", "D1")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "half", "D0.5")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "quar*", "D0.25")
 
-
 # Load filtered AMR data --------------------------------------------------
 
 # Start here if AMR results have been filtered already
@@ -68,27 +84,32 @@ amrResultsTidy <- amrResultsFiltered %>%
   gather(Category, CategoryName, c(1:4))
 
 amrResultsTidy$Category <- factor(amrResultsTidy$Category, 
-                                  levels = c('Class', 'Mechanism', 'Group', 'Gene'))
+                                  levels = c('Class', 
+                                             'Mechanism', 
+                                             'Group', 
+                                             'Gene'))
 
 amrCategories <- levels(amrResultsTidy$Category)
 
 krakenTaxa <- levels(krakenResultsFiltered$TaxRank)
 
-# Split tidy data frame of AMR results by AMR category
-# Use the names of the AMR categories as names of the elements of the list
+# Split results by categories ---------------------------------------------
+
+# Will adopt split, apply, combine strategy
+# Using the names of the AMR categories and taxonomic ranks as names of the 
+# elements of the lists
 
 amrResultsList <- amrResultsTidy %>% 
   split(.$Category) %>% #splitting dataframe using base R but with purrr's piping
   set_names(nm=amrCategories)
 
-# Split tidy data frame of Kraken results by taxonomic rank
-# Use the names of the taxonomic ranks as names of the elements of the list
 
 krakenResultsList <- krakenResultsFiltered %>% 
   split(.$TaxRank) %>% 
   set_names(nm=krakenTaxa)
 
-# Summarize results: calculate mean by Depth
+
+# Summarize results(sum) --------------------------------------------------
 
 amrResultsSummary <- lapply(amrResultsList, function(x){
   summarizeAMRbyCategory(x)
@@ -98,27 +119,25 @@ krakenResultsSummary <- lapply(krakenResultsList, function(x){
   summarizeKrakenbyTaxID(x)
 })
 
-# Convert AMR results to wide format
+# Convert results to wide format ------------------------------------------
 
-# Potentially can use the same function and a list/vector of AMR and Kraken results
-# to avoid duplication
+# Potentially can use the same function and a list/vector of AMR and Kraken 
+# results to avoid duplication
 
 amrResultsWide <- lapply(amrResultsSummary, function(x){
   widenAMR(x)
 })
 
-# Convert Kraken results to wide format
-
 krakenResultsWide <- lapply(krakenResultsSummary, function(x){
   widenKraken(x)
 })
 
-# Convert AMR results from wide format to matrix
+
+# Convert wide to matrix --------------------------------------------------
 
 amrResultsMat <- lapply(amrResultsWide, function(x){
   matrixAMR(x)
 })
-
 
 krakenResultsMat <- lapply(krakenResultsWide, function(x){
   matrixKraken(x)
@@ -138,109 +157,10 @@ krakenResultsMat <- lapply(krakenResultsMat, function(x){
   t(x)
   
 })
-# Example: one specific rarefaction curve
 
-#rarec(amrResultsMat[['Name']], 
-#      step=100, 
-#      sample=min(rowSums(amrResultsMat[['Name']])))
+# Construction of rarefaction curves --------------------------------------
 
-
-# Rarefaction curves for all members of the list
 # This step requires optimization (parallel mapping or compiling, maybe?)
-
-# purrr version
-
-#amrRarefy <- map(amrResultsMat, function(x){
-#  raremax <- min(rowSums(x))
-#  rarecurve_ROP(x, step=5, sample=raremax)
-#})
-
-# mclapply version
-
-amrRarCurve <- mclapply(amrResultsMat, function(x){
-  raremax <- min(rowSums(x))
-  rarecurve(x, step=50, sample=raremax)
-},mc.cores=10)
-
-krakenRarCurve <- mclapply(krakenResultsMat, function(x){
-  raremax <- min(rowSums(x))
-  rarecurve(x, step=1000, sample=raremax)
-},mc.cores=10)
-
-# Use mclapply function
-krakenAlphaRarefaction <- mclapply(krakenResultsMat, function(x){
-  alpha_rarefaction(x, minlevel=0)
-},mc.cores = 10)
-
-amrAlphaRarefaction <- mclapply(amrResultsMat, function(x){
-  alpha_rarefaction(x, minlevel=0)
-}, mc.cores=10)
-
-krakenAlphaRarefaction <- lapply(krakenAlphaRarefaction2, function(x) data.table(
-  ID=names(x$raw_species_abundance), 
-  RawSpeciesAbundance=as.numeric(x$raw_species_abundance), 
-  RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), 
-  AlphaDiv=as.numeric(x$alphadiv), 
-  Shannon=as.numeric(x$shannon), 
-  Evenness=as.numeric(x$evenness)
-))
-
-amrAlphaRarefaction <- lapply(amrAlphaRarefaction, function(x) data.table(
-  ID=names(x$raw_species_abundance), 
-  RawSpeciesAbundance=as.numeric(x$raw_species_abundance), 
-  RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), 
-  AlphaDiv=as.numeric(x$alphadiv), 
-  Shannon=as.numeric(x$shannon), 
-  Evenness=as.numeric(x$evenness)
-))
-
-# Need functional programming here ASAP
-
-amrCategories <- levels(amrResultsTidy$Category)
-
-amrAlphaRarefaction[[1]]$Level <- rep(amrCategories[[1]], length(amrAlphaRarefaction[[1]]$ID))
-amrAlphaRarefaction[[2]]$Level <- rep(amrCategories[[2]], length(amrAlphaRarefaction[[2]]$ID))
-amrAlphaRarefaction[[3]]$Level <- rep(amrCategories[[3]], length(amrAlphaRarefaction[[3]]$ID))
-amrAlphaRarefaction[[4]]$Level <- rep(amrCategories[[4]], length(amrAlphaRarefaction[[4]]$ID))
-
-krakenAlphaRarefaction[[1]]$Level <- rep(krakenTaxa[[1]], length(krakenAlphaRarefaction[[1]]$ID))
-krakenAlphaRarefaction[[2]]$Level <- rep(krakenTaxa[[2]], length(krakenAlphaRarefaction[[2]]$ID))
-krakenAlphaRarefaction[[3]]$Level <- rep(krakenTaxa[[3]], length(krakenAlphaRarefaction[[3]]$ID))
-krakenAlphaRarefaction[[4]]$Level <- rep(krakenTaxa[[4]], length(krakenAlphaRarefaction[[4]]$ID))
-krakenAlphaRarefaction[[5]]$Level <- rep(krakenTaxa[[5]], length(krakenAlphaRarefaction[[5]]$ID))
-krakenAlphaRarefaction[[6]]$Level <- rep(krakenTaxa[[6]], length(krakenAlphaRarefaction[[6]]$ID))
-krakenAlphaRarefaction[[7]]$Level <- rep(krakenTaxa[[7]], length(krakenAlphaRarefaction[[7]]$ID))
-krakenAlphaRarefaction[[8]]$Level <- rep(krakenTaxa[[8]], length(krakenAlphaRarefaction[[8]]$ID))
-
-krakenAlphaRarefaction2[[1]]$Level <- rep(krakenTaxa[[1]], length(krakenAlphaRarefaction2[[1]]$ID))
-krakenAlphaRarefaction2[[2]]$Level <- rep(krakenTaxa[[2]], length(krakenAlphaRarefaction2[[2]]$ID))
-krakenAlphaRarefaction2[[3]]$Level <- rep(krakenTaxa[[3]], length(krakenAlphaRarefaction2[[3]]$ID))
-krakenAlphaRarefaction2[[4]]$Level <- rep(krakenTaxa[[4]], length(krakenAlphaRarefaction2[[4]]$ID))
-krakenAlphaRarefaction2[[5]]$Level <- rep(krakenTaxa[[5]], length(krakenAlphaRarefaction2[[5]]$ID))
-krakenAlphaRarefaction2[[6]]$Level <- rep(krakenTaxa[[6]], length(krakenAlphaRarefaction2[[6]]$ID))
-krakenAlphaRarefaction2[[7]]$Level <- rep(krakenTaxa[[7]], length(krakenAlphaRarefaction2[[7]]$ID))
-krakenAlphaRarefaction2[[8]]$Level <- rep(krakenTaxa[[8]], length(krakenAlphaRarefaction2[[8]]$ID))
-
-amrAlphaRarefactionDF <- lapply(amrAlphaRarefaction, function(x){
-  x <- as.data.frame(x)
-  x
-})
-
-krakenAlphaRarefactionDF <- lapply(krakenAlphaRarefaction, function(x){
-  x <- as.data.frame(x)
-  x
-})
-
-krakenAlphaRarefaction2DF <- lapply(krakenAlphaRarefaction2, function(x){
-  x <- as.data.frame(x)
-  x
-})
-
-amrAlphaRarefactionDF <- do.call("rbind", amrAlphaRarefactionDF)
-  
-krakenAlphaRarefactionDF <- do.call("rbind", krakenAlphaRarefactionDF)
-
-krakenAlphaRarefaction2DF <- do.call("rbind", krakenAlphaRarefaction2DF)
 
 # Use microbenchmark to compare between the two approaches
 
@@ -262,6 +182,25 @@ krakenAlphaRarefaction2DF <- do.call("rbind", krakenAlphaRarefaction2DF)
 
 # mclapply wins!
 
+# purrr version
+
+#amrRarefy <- map(amrResultsMat, function(x){
+#  raremax <- min(rowSums(x))
+#  rarecurve_ROP(x, step=5, sample=raremax)
+#})
+
+# mclapply version (and the winner!)
+
+amrRarCurve <- mclapply(amrResultsMat, function(x){
+  raremax <- min(rowSums(x))
+  rarecurve(x, step=50, sample=raremax)
+},mc.cores=10)
+
+krakenRarCurve <- mclapply(krakenResultsMat, function(x){
+  raremax <- min(rowSums(x))
+  rarecurve(x, step=1000, sample=raremax)
+},mc.cores=10)
+
 # Rename list of rarefied data using the sample names
 # Need to think of a better way to extract the sample names
 
@@ -277,6 +216,7 @@ amrRarCurve <- mclapply(amrRarCurve, function(x){
 
 krakenRarCurve <- mclapply(krakenRarCurve, function(x){
   set_names(x,krakenSamples)}, mc.cores=10)
+
 # Generate list of dataframes
 # Hacky, but it works. Need to make it cleaner and faster.
 
@@ -286,14 +226,9 @@ amrRarCurve <- amrRarCurve %>%
 krakenRarCurve <- krakenRarCurve %>% 
   map(as_vector)
 
-krakenAlphaDiversity <- krakenAlphaDiversity %>%
-  map(as_vector)
-
 amrRarCurveDF <- map(amrRarCurve, function(x) as_tibble(x, attr(x, "names")))
 
 krakenRarefyDF <- map(krakenRarCurve, function(x) as_tibble(x, attr(x, "names")))
-
-krakenAlphaDivDF <- map(krakenAlphaDiversity, function(x) as_tibble(x, attr(x, "names")))
 
 # Split rownames in order to generate columns with useful information
 
@@ -322,14 +257,6 @@ krakenRarefyDF <- mclapply(krakenRarefyDF, function(x) {
 mc.cores=10
 )
 
-amrAlphaRarefactionDF$Depth <- str_replace(amrAlphaRarefactionDF$ID, "_.*", "")
-
-krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$ID, "_.*", "")
-
-
-krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$ID, "_.*", "")
-# Generate one single dataframe and create column for AMR Level
-
 amrRarCurveDF <- do.call("rbind", amrRarCurveDF)
 amrRarCurveDF$AMRLevel <- row.names(amrRarCurveDF)
 amrRarCurveDF$AMRLevel <- str_extract(amrRarCurveDF$AMRLevel, "^\\w+")
@@ -346,6 +273,103 @@ krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "H", "D0.5")
 krakenRarefyDF$Depth <- str_replace(krakenRarefyDF$Depth, "QD", "D0.25")
 
 
+# Alpha Diversity and Species Richness calculations -----------------------
+
+krakenAlphaRarefaction <- mclapply(krakenResultsMat, function(x){
+  alpha_rarefaction(x, minlevel=0)
+},mc.cores = 10)
+
+amrAlphaRarefaction <- mclapply(amrResultsMat, function(x){
+  alpha_rarefaction(x, minlevel=0)
+}, mc.cores=10)
+
+# Consider change to data frame/tibble 
+
+krakenAlphaRarefaction <- lapply(krakenAlphaRarefaction2, function(x) data.table(
+  ID=names(x$raw_species_abundance), 
+  RawSpeciesAbundance=as.numeric(x$raw_species_abundance), 
+  RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), 
+  AlphaDiv=as.numeric(x$alphadiv), 
+  Shannon=as.numeric(x$shannon), 
+  Evenness=as.numeric(x$evenness)
+))
+
+amrAlphaRarefaction <- lapply(amrAlphaRarefaction, function(x) data.table(
+  ID=names(x$raw_species_abundance), 
+  RawSpeciesAbundance=as.numeric(x$raw_species_abundance), 
+  RarSpeciesAbundance=as.numeric(x$rarefied_species_abundance), 
+  AlphaDiv=as.numeric(x$alphadiv), 
+  Shannon=as.numeric(x$shannon), 
+  Evenness=as.numeric(x$evenness)
+))
+
+
+amrCategories <- levels(amrResultsTidy$Category)
+
+foreach(i=amrAlphaRarefaction, j=amrCategories) %do%
+  rep(j,length(i$ID)) -> i$Level
+
+#amrAlphaRarefaction[[1]]$Level <- rep(amrCategories[[1]], length(amrAlphaRarefaction[[1]]$ID))
+#amrAlphaRarefaction[[2]]$Level <- rep(amrCategories[[2]], length(amrAlphaRarefaction[[2]]$ID))
+#amrAlphaRarefaction[[3]]$Level <- rep(amrCategories[[3]], length(amrAlphaRarefaction[[3]]$ID))
+#amrAlphaRarefaction[[4]]$Level <- rep(amrCategories[[4]], length(amrAlphaRarefaction[[4]]$ID))
+
+foreach(i=krakenAlphaRarefaction, j=krakenTaxa) %do%
+  rep(j,length(i$ID)) -> i$Level
+
+#krakenAlphaRarefaction[[1]]$Level <- rep(krakenTaxa[[1]], length(krakenAlphaRarefaction[[1]]$ID))
+#krakenAlphaRarefaction[[2]]$Level <- rep(krakenTaxa[[2]], length(krakenAlphaRarefaction[[2]]$ID))
+#krakenAlphaRarefaction[[3]]$Level <- rep(krakenTaxa[[3]], length(krakenAlphaRarefaction[[3]]$ID))
+#krakenAlphaRarefaction[[4]]$Level <- rep(krakenTaxa[[4]], length(krakenAlphaRarefaction[[4]]$ID))
+#krakenAlphaRarefaction[[5]]$Level <- rep(krakenTaxa[[5]], length(krakenAlphaRarefaction[[5]]$ID))
+#krakenAlphaRarefaction[[6]]$Level <- rep(krakenTaxa[[6]], length(krakenAlphaRarefaction[[6]]$ID))
+#krakenAlphaRarefaction[[7]]$Level <- rep(krakenTaxa[[7]], length(krakenAlphaRarefaction[[7]]$ID))
+#krakenAlphaRarefaction[[8]]$Level <- rep(krakenTaxa[[8]], length(krakenAlphaRarefaction[[8]]$ID))
+
+foreach(i=krakenAlphaRarefaction2, j=krakenTaxa) %do%
+  rep(j,length(i$ID)) -> i$Level
+
+#krakenAlphaRarefaction2[[1]]$Level <- rep(krakenTaxa[[1]], length(krakenAlphaRarefaction2[[1]]$ID))
+#krakenAlphaRarefaction2[[2]]$Level <- rep(krakenTaxa[[2]], length(krakenAlphaRarefaction2[[2]]$ID))
+#krakenAlphaRarefaction2[[3]]$Level <- rep(krakenTaxa[[3]], length(krakenAlphaRarefaction2[[3]]$ID))
+#krakenAlphaRarefaction2[[4]]$Level <- rep(krakenTaxa[[4]], length(krakenAlphaRarefaction2[[4]]$ID))
+#krakenAlphaRarefaction2[[5]]$Level <- rep(krakenTaxa[[5]], length(krakenAlphaRarefaction2[[5]]$ID))
+#krakenAlphaRarefaction2[[6]]$Level <- rep(krakenTaxa[[6]], length(krakenAlphaRarefaction2[[6]]$ID))
+#krakenAlphaRarefaction2[[7]]$Level <- rep(krakenTaxa[[7]], length(krakenAlphaRarefaction2[[7]]$ID))
+#krakenAlphaRarefaction2[[8]]$Level <- rep(krakenTaxa[[8]], length(krakenAlphaRarefaction2[[8]]$ID))
+
+# Seems like unnecessary repetition to convert these to data frames when they
+# could have been created as dataframes
+
+amrAlphaRarefactionDF <- lapply(amrAlphaRarefaction, function(x){
+  x <- as.data.frame(x)
+  x
+})
+
+krakenAlphaRarefactionDF <- lapply(krakenAlphaRarefaction, function(x){
+  x <- as.data.frame(x)
+  x
+})
+
+krakenAlphaRarefaction2DF <- lapply(krakenAlphaRarefaction2, function(x){
+  x <- as.data.frame(x)
+  x
+})
+
+amrAlphaRarefactionDF <- do.call("rbind", amrAlphaRarefactionDF)
+  
+krakenAlphaRarefactionDF <- do.call("rbind", krakenAlphaRarefactionDF)
+
+krakenAlphaRarefaction2DF <- do.call("rbind", krakenAlphaRarefaction2DF)
+
+amrAlphaRarefactionDF$Depth <- str_replace(amrAlphaRarefactionDF$ID, "_.*", "")
+
+krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$ID, "_.*", "")
+
+
+krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$ID, "_.*", "")
+# Generate one single dataframe and create column for AMR Level
+
 krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$Depth, "F", "D1")
 krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$Depth, "H", "D0.5")
 krakenAlphaRarefactionDF$Depth <- str_replace(krakenAlphaRarefactionDF$Depth, "QD", "D0.25")
@@ -357,82 +381,6 @@ amrAlphaRarefactionDF$Depth <- str_replace(amrAlphaRarefactionDF$Depth, "QD", "D
 krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, "F", "D1")
 krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, "H", "D0.5")
 krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, "QD", "D0.25")
-
-
-# Plot rarefaction curves using Rarefaction Analyzer data
-
-# Slice dataset by AMR level
-
-# Remove seqtk datacolor=Sample_type (not needed for now)
-
-amrRarefiedConcat <- amrRarefiedConcat %>%
-  filter(Depth != "seqtk")
-
-amrRarefiedConcat$Depth <- str_replace(amrRarefiedConcat$Depth, 'half[1-2]', 'half')
-
-amrRarefiedMean <- amrRarefiedConcat %>%
-  group_by(Depth,PercentSampling, Level) %>%
-  summarise(MeanCounts = mean(Counts))
-
-amrRarefiedClass <- amrRarefiedConcat[amrRarefiedConcat$Level == "class",]
-
-amrRarefiedMechanism <- amrRarefiedConcat[amrRarefiedConcat$Level == "mechanism",]
-
-amrRarefiedGroup <- amrRarefiedConcat[amrRarefiedConcat$Level == "group",] 
-  
-amrRarefiedGene <- amrRarefiedConcat[amrRarefiedConcat$Level == "gene",]
-
-
-amrClassRarCurve <- amrRarefiedClass %>% 
-  ggplot(aes(PercentSampling, Counts, color=Depth)) + 
-  geom_line() + 
-  scale_x_continuous(breaks=seq(5, 100, 5)) +
-  facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
-
-amrClassMeanCurve <- amrRarefiedClass %>% 
-  ggplot(aes(PercentSampling, MeanCounts, color=Depth)) + 
-  geom_line() + 
-  scale_x_continuous(breaks=seq(5, 100, 5))
-  #facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
-
-amrMechanismRarCurve <- amrRarefiedMechanism %>% 
-  ggplot(aes(PercentSampling, Counts, color=Depth)) + 
-  geom_line() + 
-  scale_x_continuous(breaks=seq(5, 100, 5)) +
-  facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
-
-amrGroupRarCurve <- amrRarefiedGroup %>% 
-  ggplot(aes(PercentSampling, Counts, color=Depth)) + 
-  geom_line() + 
-  scale_x_continuous(breaks=seq(5, 100, 5)) +
-  facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
-
-amrGeneRarCurve <- amrRarefiedGene %>% 
-  ggplot(aes(PercentSampling, Counts, color=Depth)) + 
-  geom_line() + 
-  scale_x_continuous(breaks=seq(5, 100, 5)) +
-  facet_wrap( ~ SampleID, nrow = 2, ncol = 4, scales = "free")
-
-# Plot aggregated rarefaction curves
-
-krakenRarPhylum <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "P",]
-krakenRarClass <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "C",]
-krakenRarOrder <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "O",]
-krakenRarFamily <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "F",]
-krakenRarGenus <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "G",]
-krakenRarSpecies <- krakenRarefiedMean[krakenRarefiedMean$krakenLevel == "S",]
-
-krakenAllPhylum <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "P",]
-krakenAllClass <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "C",]
-krakenAllOrder <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "O",]
-krakenAllFamily <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "F",]
-krakenAllGenus <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "G",]
-krakenAllSpecies <- krakenRarefyDF[krakenRarefyDF$krakenLevel == "S",]
-
-# Same colour palette as the matplotlib_venn default color palette
-
-vennPalette <- c("#F8766D", "#00BA38", "#619CFF")
-vennPalette <- rev(vennPalette)
 
 # Write a function!!!
 
@@ -529,14 +477,13 @@ krakenAllRarCurvesLarger <- krakenAllRarCurveList %>%
   })
 
 foreach(i=krakenAllRarCurvesLarger) %do%
-  ggsave(filename=paste('rarefaction',unique(i$data$krakenLevel),'CB','withFacet','.png', sep='', collapse=''),
+  ggsave(filename=paste('rarefaction',unique(i$data$krakenLevel),'CB','noFacet','.png', sep='', collapse=''),
          path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/rarefaction',
          plot = i,
          height=8.50,
          width=10.50,
          units="in",
          device="png")
-
 
 amrAllAlphaBoxPlots <- amrAlphaRarefactionDF %>%
   amrAlphaDiv()
@@ -595,7 +542,10 @@ png(filename = "amrMechanismRarefaction2.png", width=1962, height = 1297)
 print(amrAllRarCurves[[4]])
 dev.off()
 
-# Correlation plot: amr reads to hits
+
+# Correlation plots -------------------------------------------------------
+
+# Should make into a function for the package
 
 amrReadstoHitRatio$Sample_type <- str_replace(amrReadstoHitRatio$Sample_type, "F", "D1")
 
@@ -658,7 +608,38 @@ amrReadsvsHitsCor +
   scale_color_manual(values=vennPalette, 
                     name="Sample type\n")
 
-# Kruskal-Wallis tests
+# Generating kraken correlation plot
+
+
+krakenReadsvsHitsCorTest <- cor.test(x = krakenReadstoHitRatio$Reads, krakenReadstoHitRatio$KrakenHits, method = "spearman")
+
+krakenReadsvsHitsCor <- ggplot(krakenReadstoHitRatio, aes(Reads, KrakenHits)) + 
+  geom_point(aes(fill=Sample_type), alpha=0.6, size=10, pch=21, color="grey")+ 
+  geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
+
+krakenReadsvsHitsCor +
+  ylab("Number of Kraken Hits\n") +
+  xlab("\nNumber of reads") +
+  theme(axis.text.y=element_text(size=35),
+        axis.title.y=element_text(size=44),
+        axis.text.x=element_text(size=35),
+        axis.title.x=element_text(size=44),
+        legend.title=element_text(size=36),
+        legend.text=element_text(size=36, vjust=0.5),
+        legend.key = element_rect(size = 2),
+        legend.key.size = unit(2, "lines"),
+        legend.spacing = unit(0.2,"lines"),
+        panel.background = element_rect(fill = "grey90", colour = "grey80")) +
+  scale_fill_manual(values=rev(cbPalette),
+                     name="Sequencing Depth\n")
+
+ggsave(filename='krakenReadsvsHitsCorCBScheme.png', 
+       path='~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017',
+       width=14, 
+       height=8.50,
+       units="in")
+
+# Kruskal-Wallis tests ----------------------------------------------------
 
 # Resistome
 
@@ -712,7 +693,7 @@ krakenAlphaPosthoc <- krakenAlphaRarefactionLevels %>%
     posthoc.kruskal.nemenyi.test(AlphaDiv ~ Depth, data = x, dist="Chisq")
   })
 
-# Generating kraken correlation plot
+# Computing aggregated sums of hits ---------------------------------------
 
 krakenPhylumResults <- krakenResultsList[["P"]]
 
@@ -723,29 +704,3 @@ krakenPhylumSums <- krakenPhylumResults %>%
   summarise(MeanHits = mean(CladeReads)) %>%
   group_by(SampleID) %>%
   summarise(SumHits = sum(MeanHits))
-
-
-cbPalette <- c("#FFCD48", colorschemes$Categorical.12[8], colorschemes$Categorical.12[12])
-
-krakenReadsvsHitsCorTest <- cor.test(x = krakenReadstoHitRatio$Reads, krakenReadstoHitRatio$KrakenHits, method = "spearman")
-
-krakenReadsvsHitsCor <- ggplot(krakenReadstoHitRatio, aes(Reads, KrakenHits)) + 
-  geom_point(aes(fill=Sample_type), alpha=0.6, size=10, pch=21, color="grey")+ 
-  geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
-
-krakenReadsvsHitsCor +
-  ylab("Number of Kraken Hits\n") +
-  xlab("\nNumber of reads") +
-  theme(axis.text.y=element_text(size=35),
-        axis.title.y=element_text(size=44),
-        axis.text.x=element_text(size=35),
-        axis.title.x=element_text(size=44),
-        legend.title=element_text(size=36),
-        legend.text=element_text(size=36, vjust=0.5),
-        legend.key = element_rect(size = 2),
-        legend.key.size = unit(2, "lines"),
-        legend.spacing = unit(0.2,"lines"),
-        panel.background = element_rect(fill = "grey90", colour = "grey80")) +
-  scale_fill_manual(values=rev(cbPalette),
-                     name="Sequencing Depth\n")
-ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/krakenReadsvsHitsCorCBScheme.png', width=14, height=8.50)

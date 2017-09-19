@@ -148,22 +148,24 @@ samplesByLevel <- function(rarefiedData) {
 #' @examples
 krakenRarefactionCurve <- function(taxSubset){
     rarefactionCurve <- ggplot(taxSubset, aes(Subsample, value, color=Depth)) +
-      geom_point(aes(group=Sample), alpha=0.2, size=4) + 
+      geom_point(aes(group=Sample), alpha=0.8, size=4) + 
       theme(strip.text.x=element_text(size=35),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
           axis.title.x=element_text(size=42),
           axis.title.y=element_text(size=42),
-          legend.position="none",
+          legend.position="right",
           legend.title=element_text(size=34),
           legend.text=element_text(size=34, vjust=0.5),
+          legend.key.size = unit(2, "lines"),
+          legend.spacing = unit(0.2,"lines"),
           plot.title=element_text(size=52, hjust=0.5)) +
     xlab("\nNumber of reads") +
     ylab(paste('Number ', 'of ', taxSubset$krakenLevel, '\n')) +
     scale_color_manual(values=rev(cbPalette)) +
     #scale_y_log10() +
-    scale_x_continuous(labels=scientific) +
-    facet_grid(. ~ Depth)
+    scale_x_continuous(labels=scientific)
+    #facet_grid(. ~ Depth)
 }
 
 #' Title
