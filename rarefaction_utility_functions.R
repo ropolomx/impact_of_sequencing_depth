@@ -54,7 +54,6 @@ summarizeKrakenbyTaxID <- function(X) {
 #' @return Summarized AMR results in wide format
 #' @export
 #'
-#' @examples
 
 widenAMR <- function(summarizedAMR) {
   amrLevelWide <- summarizedAMR %>% 
@@ -149,23 +148,22 @@ samplesByLevel <- function(rarefiedData) {
 #' @examples
 krakenRarefactionCurve <- function(taxSubset){
     rarefactionCurve <- ggplot(taxSubset, aes(Subsample, value, color=Depth)) +
-    geom_point(aes(alpha=0.8, group=Sample)) + 
-    theme(strip.text.x=element_text(size=30),
+      geom_point(aes(group=Sample), alpha=0.2, size=4) + 
+      theme(strip.text.x=element_text(size=35),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
-          axis.title.x=element_text(size=44),
-          axis.title.y=element_text(size=44),
+          axis.title.x=element_text(size=42),
+          axis.title.y=element_text(size=42),
           legend.position="none",
-          #legend.title=element_text(size=36),
-          #legend.text=element_text(size=36, vjust=0.5),
+          legend.title=element_text(size=34),
+          legend.text=element_text(size=34, vjust=0.5),
           plot.title=element_text(size=52, hjust=0.5)) +
     xlab("\nNumber of reads") +
     ylab(paste('Number ', 'of ', taxSubset$krakenLevel, '\n')) +
-    ggtitle(paste(taxSubset$krakenLevel, '\n')) +
     scale_color_manual(values=rev(cbPalette)) +
     #scale_y_log10() +
-    scale_x_continuous(labels=scientific)
-    #facet_grid(. ~ Depth)
+    scale_x_continuous(labels=scientific) +
+    facet_grid(. ~ Depth)
 }
 
 #' Title
@@ -179,11 +177,11 @@ krakenRarefactionCurve <- function(taxSubset){
 amrRarefactionCurve <- function(amrSubset){
     rarefactionCurve <- ggplot(amrSubset, aes(Subsample, value, color=Depth)) +
     geom_line(aes(group=SampleID, alpha=0.4, size=4)) + 
-    theme(strip.text.x=element_text(size=30),
+    theme(strip.text.x=element_text(size=35),
           axis.text.y=element_text(size=40),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
-          axis.title.x=element_text(size=44),
-          axis.title.y=element_text(size=44),
+          axis.title.x=element_text(size=42),
+          axis.title.y=element_text(size=42),
           legend.position="none",
           #legend.title=element_text(size=36),
           #legend.text=element_text(size=36, vjust=0.5),
@@ -199,7 +197,7 @@ amrRarefactionCurve <- function(amrSubset){
 
 #' Title
 #'
-#' @param taxSubset 
+#' @param taxSubset https://outlook.office.com/owa/
 #'
 #' @return
 #' @export

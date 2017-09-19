@@ -1,25 +1,24 @@
 # Rarefaction analysis of 2-4-8 study data
 # Analysis of alpha-diversity and species richness
 
-# Load necessary packages
+# Load packages -----------------------------------------------------------
 
 library(readr)
 library(tidyr)
 library(dplyr)
 library(stringr)
 library(purrr)
+library(foreach)
 library(ggplot2)
 library(metagenomeSeq)
 library(vegan)
 library(scales)
 
-# Source script with utility functions
-
-# Will create an R package in the future
+# Source utility functions ------------------------------------------------
 
 source('rarefaction_utility_functions.R')
 
-# Read AMR and Kraken data
+# Load and filter AMR and Kraken data -------------------------------------
 
 # Results generated with Coverage Sampler and filtered with Python-Pandas
 # Filtering involved keeping results with gene fraction >= 75% and 
@@ -58,7 +57,8 @@ amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "full", "D1")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "half", "D0.5")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "quar*", "D0.25")
 
-#### Starting with Filtered data ####
+
+# Load filtered AMR data --------------------------------------------------
 
 # Start here if AMR results have been filtered already
 
@@ -193,6 +193,8 @@ amrAlphaRarefaction <- lapply(amrAlphaRarefaction, function(x) data.table(
   Shannon=as.numeric(x$shannon), 
   Evenness=as.numeric(x$evenness)
 ))
+
+# Need functional programming here ASAP
 
 amrCategories <- levels(amrResultsTidy$Category)
 
@@ -525,6 +527,15 @@ krakenAllRarCurvesLarger <- krakenAllRarCurveList %>%
   map(function(x){
     krakenRarefactionCurve(x)
   })
+
+foreach(i=krakenAllRarCurvesLarger) %do%
+  ggsave(filename=paste('rarefaction',unique(i$data$krakenLevel),'CB','withFacet','.png', sep='', collapse=''),
+         path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/rarefaction',
+         plot = i,
+         height=8.50,
+         width=10.50,
+         units="in",
+         device="png")
 
 
 amrAllAlphaBoxPlots <- amrAlphaRarefactionDF %>%
