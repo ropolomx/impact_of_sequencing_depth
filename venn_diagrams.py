@@ -5,21 +5,34 @@ from pandas import ExcelWriter
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn3_unweighted
 
+def read_kraken(report):
+
+    kraken = pd.read_csv(report)
+
+    return kraken
+
 def prepare_kraken(kraken):
 
-    kraken['SampleName'] = kraken['Sample'].str.split('_').str[0]+'_'+kraken['Sample'].str.split('_').str[1]
+    kraken["SampleName"] = kraken['Sample'].str.split('_').str[0] + '_'
+
+    kraken['Sample'].str.split('_').str[1]
 
     kraken['Type'] = kraken['SampleName'].str.split('_').str[1]
 
     kraken['Type'] = kraken['Type'].str.replace('2','')
 
-    kraken[kraken['Kraken.ID'] == 374840]
-
     # Remove phiX and microviridae reads
+    # Update this section according to the needs and discoveries of kraken datasets
 
-    kraken = kraken.drop(kraken['Kraken.ID'] == 374840)
-    kraken = kraken.drop(kraken['Kraken.ID'] == 10842)
-    kraken = kraken.drop(kraken['Kraken.ID'] == 10841)
+    removal = [374840, # phiX
+               10842, # Microvirinae
+               10841 # Microviridae
+               ]
+
+    kraken = kraken[~kraken['Kraken.ID'].isin(removal)]
+
+    return kraken
+
 
 # Remove
 
