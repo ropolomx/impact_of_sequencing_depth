@@ -623,22 +623,22 @@ allGenusComps = []
 allSpeciesComps = []
 
 for p in phylumSetLists:
-    allPhylumComps.append(kraken[kraken['Name'].isin(p)])
+    allPhylumComps.append(krakenConcat[krakenConcat['Name'].isin(p)])
 
 for c in classSetLists:
-    allClassComps.append(kraken[kraken['Name'].isin(c)])
+    allClassComps.append(krakenConcat[krakenConcat['Name'].isin(c)])
 
 for o in orderSetLists:
-    allOrderComps.append(kraken[kraken['Name'].isin(o)])
+    allOrderComps.append(krakenConcat[krakenConcat['Name'].isin(o)])
 
 for f in familySetLists:
     allFamilyComps.append(kraken[kraken['Name'].isin(f)])
 
 for g in genusSetLists:
-    allGenusComps.append(kraken[kraken['Name'].isin(g)])
+    allGenusComps.append(krakenConcat[krakenConcat['Name'].isin(g)])
 
 for s in speciesSetLists:
-    allSpeciesComps.append(kraken[kraken['Name'].isin(s)])
+    allSpeciesComps.append(krakenConcat[krakenConcat['Name'].isin(s)])
 
 phylumSlices = zip(setOperationKeys, allPhylumComps)
 
