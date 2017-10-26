@@ -6,28 +6,29 @@ import matplotlib.pyplot as plt
 from matplotlib_venn import venn3_unweighted
 
 def read_kraken(report):
-
     kraken = pd.read_csv(report)
 
     return kraken
+
 
 def prepare_kraken(kraken):
 
     kraken["SampleName"] = kraken['Sample'].str.split('_').str[0] + '_'
 
-    kraken['Sample'].str.split('_').str[1]
+    kraken["SampleName"] = kraken['Sample'].str.split('_').str[1]
 
     kraken['Type'] = kraken['SampleName'].str.split('_').str[1]
 
-    kraken['Type'] = kraken['Type'].str.replace('2','')
+    kraken['Type'] = kraken['Type'].str.replace('2', '')
 
     # Remove phiX and microviridae reads
     # Update this section according to the needs and discoveries of kraken datasets
 
-    removal = [374840, # phiX
-               10842, # Microvirinae
-               10841 # Microviridae
-               ]
+    removal = [
+        374840,  # phiX
+        10842,  # Microvirinae
+        10841  # Microviridae
+    ]
 
     kraken = kraken[~kraken['Kraken.ID'].isin(removal)]
 
@@ -36,16 +37,17 @@ def prepare_kraken(kraken):
 
 # Remove
 
-def categoryDiffKraken(category):
-    full = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] =="F"), "Name"]
+def category_diff_kraken(category):
+    full = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] == "F"), "Name"]
     half = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] == "H"), "Name"]
     quar = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] == "QD"), "Name"]
     setfull = set(full)
     sethalf = set(half)
     setquar = set(quar)
-    return(setfull, sethalf, setquar)
+    return (setfull, sethalf, setquar)
 
-def categoryDiffAMR(category):
+
+def category_diff_amr(category):
     full = amrResults[category][amrResults['Sample_type'] == "D1"]
     half = amrResults[category][amrResults['Sample_type'] == "D0.5"]
     quar = amrResults[category][amrResults['Sample_type'] == "D0.25"]
@@ -54,7 +56,8 @@ def categoryDiffAMR(category):
     sethalf = set(half)
     setquar = set(quar)
     setseqtk = set(seqtk)
-    return(setfull, sethalf, setquar, setseqtk)
+    return (setfull, sethalf, setquar, setseqtk)
+
 
 allTaxa = ['P', 'C', 'F', 'O', 'G', 'S']
 
@@ -83,12 +86,10 @@ phylumHalfSet = allTaxaSets['P'][1]
 phylumQuarSet = allTaxaSets['P'][2]
 phylumSets = [phylumFullSet, phylumHalfSet, phylumQuarSet]
 
-
 genusFullSet = allTaxaSets['G'][0]
 genusHalfSet = allTaxaSets['G'][1]
 genusQuarSet = allTaxaSets['G'][2]
 genusSets = [genusFullSet, genusHalfSet, genusQuarSet]
-
 
 speciesFullSet = allTaxaSets['S'][0]
 speciesHalfSet = allTaxaSets['S'][1]
@@ -142,7 +143,7 @@ for text in v3Genus.set_labels:
     text.set_fontsize(16)
 for text in v3Genus.subset_labels:
     text.set_fontsize(18)
-plt.title('Genus',fontsize=20)
+plt.title('Genus', fontsize=20)
 plt.savefig('krakenGenusVennCB.png')
 plt.clf()
 plt.cla()
@@ -240,22 +241,22 @@ plt.savefig('amrGeneVennCB.png')
 plt.clf()
 plt.cla()
 
-
 setOperationKeys = ['All_intersections',
-        'Full_vs_Half',
-        'Full_vs_Quar',
-        'Full_and_Half_vs_Quar',
-        'Half_vs_Full',
-        'Half_vs_Quar',
-        'Half_and_Quar_vs_Full',
-        'Quar_vs_Full',
-        'Quar_vs_Half',
-        'Quar_and_Full_vs_Half']
+                    'Full_vs_Half',
+                    'Full_vs_Quar',
+                    'Full_and_Half_vs_Quar',
+                    'Half_vs_Full',
+                    'Half_vs_Quar',
+                    'Half_and_Quar_vs_Full',
+                    'Quar_vs_Full',
+                    'Quar_vs_Half',
+                    'Quar_and_Full_vs_Half']
 
 
-def setOperations():
+def set_operations():
     """Generate a file with all the results of the set operations
     Ideally return a table with the results"""
+
 
 geneAllIntersects = geneFullSet.intersection(geneHalfSet).intersection(geneQuarSet)
 geneFullDiffHalf = geneFullSet.difference(geneHalfSet)
@@ -268,7 +269,6 @@ geneQuarDiffFull = geneQuarSet.difference(geneFullSet)
 geneQuarDiffHalf = geneQuarSet.difference(geneHalfSet)
 geneQuarInterFullDiffHalf = geneQuarSet.intersection(geneFullSet).difference(geneHalfSet)
 
-
 classAllIntersects = classFullSet.intersection(classHalfSet).intersection(classQuarSet)
 classFullDiffHalf = classFullSet.difference(classHalfSet)
 classFullDiffQuar = classFullSet.difference(classQuarSet)
@@ -280,7 +280,6 @@ classQuarDiffFull = classQuarSet.difference(classFullSet)
 classQuarDiffHalf = classQuarSet.difference(classHalfSet)
 classQuarInterFullDiffHalf = classQuarSet.intersection(classFullSet).difference(classHalfSet)
 
-
 groupAllIntersects = groupFullSet.intersection(groupHalfSet).intersection(groupQuarSet)
 groupFullDiffHalf = groupFullSet.difference(groupHalfSet)
 groupFullDiffQuar = groupFullSet.difference(groupQuarSet)
@@ -291,7 +290,6 @@ groupHalfInterQuarDiffFull = groupHalfSet.intersection(groupFullSet).difference(
 groupQuarDiffFull = groupQuarSet.difference(groupFullSet)
 groupQuarDiffHalf = groupQuarSet.difference(groupHalfSet)
 groupQuarInterFullDiffHalf = groupQuarSet.intersection(groupFullSet).difference(groupHalfSet)
-
 
 mechAllIntersects = mechFullSet.intersection(mechHalfSet).intersection(mechQuarSet)
 mechFullDiffHalf = mechFullSet.difference(mechHalfSet)
@@ -305,49 +303,48 @@ mechQuarDiffHalf = mechQuarSet.difference(mechHalfSet)
 mechQuarInterFullDiffHalf = mechQuarSet.intersection(mechFullSet).difference(mechHalfSet)
 
 geneSets = [geneAllIntersects,
-geneFullDiffHalf,
-geneFullDiffQuar,
-geneFullInterHalfDiffQuar,
-geneHalfDiffFull,
-geneHalfDiffQuar,
-geneHalfInterQuarDiffFull,
-geneQuarDiffFull,
-geneQuarDiffHalf,
-geneQuarInterFullDiffHalf]
+            geneFullDiffHalf,
+            geneFullDiffQuar,
+            geneFullInterHalfDiffQuar,
+            geneHalfDiffFull,
+            geneHalfDiffQuar,
+            geneHalfInterQuarDiffFull,
+            geneQuarDiffFull,
+            geneQuarDiffHalf,
+            geneQuarInterFullDiffHalf]
 
 classSets = [classAllIntersects,
-classFullDiffHalf,
-classFullDiffQuar,
-classFullInterHalfDiffQuar,
-classHalfDiffFull,
-classHalfDiffQuar,
-classHalfInterQuarDiffFull,
-classQuarDiffFull,
-classQuarDiffHalf,
-classQuarInterFullDiffHalf]
+             classFullDiffHalf,
+             classFullDiffQuar,
+             classFullInterHalfDiffQuar,
+             classHalfDiffFull,
+             classHalfDiffQuar,
+             classHalfInterQuarDiffFull,
+             classQuarDiffFull,
+             classQuarDiffHalf,
+             classQuarInterFullDiffHalf]
 
 mechSets = [mechAllIntersects,
-mechFullDiffHalf,
-mechFullDiffQuar,
-mechFullInterHalfDiffQuar,
-mechHalfDiffFull,
-mechHalfDiffQuar,
-mechHalfInterQuarDiffFull,
-mechQuarDiffFull,
-mechQuarDiffHalf,
-mechQuarInterFullDiffHalf]
+            mechFullDiffHalf,
+            mechFullDiffQuar,
+            mechFullInterHalfDiffQuar,
+            mechHalfDiffFull,
+            mechHalfDiffQuar,
+            mechHalfInterQuarDiffFull,
+            mechQuarDiffFull,
+            mechQuarDiffHalf,
+            mechQuarInterFullDiffHalf]
 
 groupSets = [groupAllIntersects,
-groupFullDiffHalf,
-groupFullDiffQuar,
-groupFullInterHalfDiffQuar,
-groupHalfDiffFull,
-groupHalfDiffQuar,
-groupHalfInterQuarDiffFull,
-groupQuarDiffFull,
-groupQuarDiffHalf,
-groupQuarInterFullDiffHalf]
-
+             groupFullDiffHalf,
+             groupFullDiffQuar,
+             groupFullInterHalfDiffQuar,
+             groupHalfDiffFull,
+             groupHalfDiffQuar,
+             groupHalfInterQuarDiffFull,
+             groupQuarDiffFull,
+             groupQuarDiffHalf,
+             groupQuarInterFullDiffHalf]
 
 geneSetLengths = [len(g) for g in geneSets]
 classSetLengths = [len(c) for c in classSets]
@@ -369,10 +366,10 @@ amrClassUniqueDF = pd.DataFrame.from_records(amrClassSetOperationsTuple, columns
 amrMechUniqueDF = pd.DataFrame.from_records(amrMechSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
 amrGroupUniqueDF = pd.DataFrame.from_records(amrGroupSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
 
-amrGeneUniqueDF.to_csv('amrGeneSetOperations.csv', index = False)
-amrClassUniqueDF.to_csv('amrClassSetOperations.csv', index = False)
-amrMechUniqueDF.to_csv('amrMechSetOperations.csv', index = False)
-amrGroupUniqueDF.to_csv('amrGroupSetOperations.csv', index = False)
+amrGeneUniqueDF.to_csv('amrGeneSetOperations.csv', index=False)
+amrClassUniqueDF.to_csv('amrClassSetOperations.csv', index=False)
+amrMechUniqueDF.to_csv('amrMechSetOperations.csv', index=False)
+amrGroupUniqueDF.to_csv('amrGroupSetOperations.csv', index=False)
 
 allClassComps = []
 allMechanismComps = []
@@ -399,7 +396,6 @@ groupSlices = zip(setOperationKeys, allGroupComps)
 
 geneSlices = zip(setOperationKeys, allGeneComps)
 
-
 classWriter = ExcelWriter('classComparisons.xlsx')
 mechWriter = ExcelWriter('mechComparisons.xlsx')
 groupWriter = ExcelWriter('groupComparisons.xlsx')
@@ -421,12 +417,14 @@ for n, df in geneSlices:
     df.to_excel(geneWriter, sheet_name=n, index=False)
 geneWriter.save()
 
+
 # Kraken data analysis
 
 
-def krakenSetOperations():
+def kraken_set_operations():
     """Generate a file with all the results of the set operations
     Ideally return a table with the results"""
+
 
 speciesAllIntersects = speciesFullSet.intersection(speciesHalfSet).intersection(speciesQuarSet)
 speciesFullDiffHalf = speciesFullSet.difference(speciesHalfSet)
@@ -439,7 +437,6 @@ speciesQuarDiffFull = speciesQuarSet.difference(speciesFullSet)
 speciesQuarDiffHalf = speciesQuarSet.difference(speciesHalfSet)
 speciesQuarInterFullDiffHalf = speciesQuarSet.intersection(speciesFullSet).difference(speciesHalfSet)
 
-
 classAllIntersects = classFullSet.intersection(classHalfSet).intersection(classQuarSet)
 classFullDiffHalf = classFullSet.difference(classHalfSet)
 classFullDiffQuar = classFullSet.difference(classQuarSet)
@@ -451,7 +448,6 @@ classQuarDiffFull = classQuarSet.difference(classFullSet)
 classQuarDiffHalf = classQuarSet.difference(classHalfSet)
 classQuarInterFullDiffHalf = classQuarSet.intersection(classFullSet).difference(classHalfSet)
 
-
 genusAllIntersects = genusFullSet.intersection(genusHalfSet).intersection(genusQuarSet)
 genusFullDiffHalf = genusFullSet.difference(genusHalfSet)
 genusFullDiffQuar = genusFullSet.difference(genusQuarSet)
@@ -462,7 +458,6 @@ genusHalfInterQuarDiffFull = genusHalfSet.intersection(genusFullSet).difference(
 genusQuarDiffFull = genusQuarSet.difference(genusFullSet)
 genusQuarDiffHalf = genusQuarSet.difference(genusHalfSet)
 genusQuarInterFullDiffHalf = genusQuarSet.intersection(genusFullSet).difference(genusHalfSet)
-
 
 familyAllIntersects = familyFullSet.intersection(familyHalfSet).intersection(familyQuarSet)
 familyFullDiffHalf = familyFullSet.difference(familyHalfSet)
@@ -498,71 +493,70 @@ phylumQuarDiffHalf = phylumQuarSet.difference(phylumHalfSet)
 phylumQuarInterFullDiffHalf = phylumQuarSet.intersection(phylumFullSet).difference(phylumHalfSet)
 
 phylumSets = [phylumAllIntersects,
-phylumFullDiffHalf,
-phylumFullDiffQuar,
-phylumFullInterHalfDiffQuar,
-phylumHalfDiffFull,
-phylumHalfDiffQuar,
-phylumHalfInterQuarDiffFull,
-phylumQuarDiffFull,
-phylumQuarDiffHalf,
-phylumQuarInterFullDiffHalf]
+              phylumFullDiffHalf,
+              phylumFullDiffQuar,
+              phylumFullInterHalfDiffQuar,
+              phylumHalfDiffFull,
+              phylumHalfDiffQuar,
+              phylumHalfInterQuarDiffFull,
+              phylumQuarDiffFull,
+              phylumQuarDiffHalf,
+              phylumQuarInterFullDiffHalf]
 
 classSets = [classAllIntersects,
-classFullDiffHalf,
-classFullDiffQuar,
-classFullInterHalfDiffQuar,
-classHalfDiffFull,
-classHalfDiffQuar,
-classHalfInterQuarDiffFull,
-classQuarDiffFull,
-classQuarDiffHalf,
-classQuarInterFullDiffHalf]
+             classFullDiffHalf,
+             classFullDiffQuar,
+             classFullInterHalfDiffQuar,
+             classHalfDiffFull,
+             classHalfDiffQuar,
+             classHalfInterQuarDiffFull,
+             classQuarDiffFull,
+             classQuarDiffHalf,
+             classQuarInterFullDiffHalf]
 
 orderSets = [orderAllIntersects,
-orderFullDiffHalf,
-orderFullDiffQuar,
-orderFullInterHalfDiffQuar,
-orderHalfDiffFull,
-orderHalfDiffQuar,
-orderHalfInterQuarDiffFull,
-orderQuarDiffFull,
-orderQuarDiffHalf,
-orderQuarInterFullDiffHalf]
+             orderFullDiffHalf,
+             orderFullDiffQuar,
+             orderFullInterHalfDiffQuar,
+             orderHalfDiffFull,
+             orderHalfDiffQuar,
+             orderHalfInterQuarDiffFull,
+             orderQuarDiffFull,
+             orderQuarDiffHalf,
+             orderQuarInterFullDiffHalf]
 
 familySets = [familyAllIntersects,
-familyFullDiffHalf,
-familyFullDiffQuar,
-familyFullInterHalfDiffQuar,
-familyHalfDiffFull,
-familyHalfDiffQuar,
-familyHalfInterQuarDiffFull,
-familyQuarDiffFull,
-familyQuarDiffHalf,
-familyQuarInterFullDiffHalf]
+              familyFullDiffHalf,
+              familyFullDiffQuar,
+              familyFullInterHalfDiffQuar,
+              familyHalfDiffFull,
+              familyHalfDiffQuar,
+              familyHalfInterQuarDiffFull,
+              familyQuarDiffFull,
+              familyQuarDiffHalf,
+              familyQuarInterFullDiffHalf]
 
 genusSets = [genusAllIntersects,
-genusFullDiffHalf,
-genusFullDiffQuar,
-genusFullInterHalfDiffQuar,
-genusHalfDiffFull,
-genusHalfDiffQuar,
-genusHalfInterQuarDiffFull,
-genusQuarDiffFull,
-genusQuarDiffHalf,
-genusQuarInterFullDiffHalf]
-
+             genusFullDiffHalf,
+             genusFullDiffQuar,
+             genusFullInterHalfDiffQuar,
+             genusHalfDiffFull,
+             genusHalfDiffQuar,
+             genusHalfInterQuarDiffFull,
+             genusQuarDiffFull,
+             genusQuarDiffHalf,
+             genusQuarInterFullDiffHalf]
 
 speciesSets = [speciesAllIntersects,
-speciesFullDiffHalf,
-speciesFullDiffQuar,
-speciesFullInterHalfDiffQuar,
-speciesHalfDiffFull,
-speciesHalfDiffQuar,
-speciesHalfInterQuarDiffFull,
-speciesQuarDiffFull,
-speciesQuarDiffHalf,
-speciesQuarInterFullDiffHalf]
+               speciesFullDiffHalf,
+               speciesFullDiffQuar,
+               speciesFullInterHalfDiffQuar,
+               speciesHalfDiffFull,
+               speciesHalfDiffQuar,
+               speciesHalfInterQuarDiffFull,
+               speciesQuarDiffFull,
+               speciesQuarDiffHalf,
+               speciesQuarInterFullDiffHalf]
 
 phylumSetLengths = [len(p) for p in phylumSets]
 classSetLengths = [len(c) for c in classSets]
@@ -579,16 +573,15 @@ genusSetLists = [list(g) for g in genusSets]
 speciesSetLists = [list(s) for s in speciesSets]
 
 setOperationKeys = ['All_intersections',
-        'Full_vs_Half',
-        'Full_vs_Quar',
-        'Full_and_Half_vs_Quar',
-        'Half_vs_Full',
-        'Half_vs_Quar',
-        'Half_and_Quar_vs_Full',
-        'Quar_vs_Full',
-        'Quar_vs_Half',
-        'Quar_and_Full_vs_Half']
-
+                    'Full_vs_Half',
+                    'Full_vs_Quar',
+                    'Full_and_Half_vs_Quar',
+                    'Half_vs_Full',
+                    'Half_vs_Quar',
+                    'Half_and_Quar_vs_Full',
+                    'Quar_vs_Full',
+                    'Quar_vs_Half',
+                    'Quar_and_Full_vs_Half']
 
 phylumSetOperationsTuple = zip(setOperationKeys, phylumSetLengths, phylumSetLists)
 classSetOperationsTuple = zip(setOperationKeys, classSetLengths, classSetLists)
@@ -604,12 +597,12 @@ familyUniqueDF = pd.DataFrame.from_records(familySetOperationsTuple, columns=['C
 genusUniqueDF = pd.DataFrame.from_records(genusSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
 speciesUniqueDF = pd.DataFrame.from_records(speciesSetOperationsTuple, columns=['Comparison', 'Size', 'Members'])
 
-phylumUniqueDF.to_csv('phylumSetOperations.csv', index = False)
-classUniqueDF.to_csv('classSetOperations.csv', index = False)
-orderUniqueDF.to_csv('orderSetOperations.csv', index = False)
-familyUniqueDF.to_csv('familySetOperations.csv', index = False)
-genusUniqueDF.to_csv('genusSetOperations.csv', index = False)
-speciesUniqueDF.to_csv('speciesSetOperations.csv', index = False)
+phylumUniqueDF.to_csv('phylumSetOperations.csv', index=False)
+classUniqueDF.to_csv('classSetOperations.csv', index=False)
+orderUniqueDF.to_csv('orderSetOperations.csv', index=False)
+familyUniqueDF.to_csv('familySetOperations.csv', index=False)
+genusUniqueDF.to_csv('genusSetOperations.csv', index=False)
+speciesUniqueDF.to_csv('speciesSetOperations.csv', index=False)
 
 allPhylumComps = []
 allClassComps = []
@@ -678,3 +671,11 @@ genusWriter.save()
 for n, df in speciesSlices:
     df.to_excel(speciesWriter, sheet_name=n, index=False)
 speciesWriter.save()
+
+def main():
+
+    args = arguments()
+
+
+if __name__ == '__main__':
+    main()
