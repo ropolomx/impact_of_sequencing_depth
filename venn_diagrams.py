@@ -10,15 +10,16 @@ def arguments():
 
 
     parser = argparse.ArgumentParser(description='Generation of Venn diagrams from Kraken reports')
-    parser.add_argument('kraken_dir',default='./',help('Directory with concatenated Kraken report'))
+    parser.add_argument('results_dir',default='./',help('Directory with Kraken and AMR results'))
 
     return parser.parse_args()
 
 
-def read_kraken(report):
-    kraken = pd.read_csv(report)
+def read_kraken(k_report, amr_report):
+    kraken = pd.read_csv(k_report)
+    amrResults = pd.read_csv(amr_report)
 
-    return kraken
+    return kraken, amrResults
 
 
 def prepare_kraken(kraken):
@@ -48,9 +49,9 @@ def prepare_kraken(kraken):
 # Remove
 
 def category_diff_kraken(category):
-    full = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] == "F"), "Name"]
-    half = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] == "H"), "Name"]
-    quar = krakenConcat.loc[(krakenConcat['TaxRank'] == category) & (krakenConcat['Sample_Type'] == "QD"), "Name"]
+    full = kraken.loc[(kraken['TaxRank'] == category) & (kraken['Sample_Type'] == "F"), "Name"]
+    half = kraken.loc[(kraken['TaxRank'] == category) & (kraken['Sample_Type'] == "H"), "Name"]
+    quar = kraken.loc[(kraken['TaxRank'] == category) & (kraken['Sample_Type'] == "QD"), "Name"]
     setfull = set(full)
     sethalf = set(half)
     setquar = set(quar)
@@ -175,7 +176,7 @@ allAMRCats = ['Class', 'Mechanism', 'Group', 'Name']
 allAMRCatsSets = {}
 
 for c in allAMRCats:
-    allAMRCatsSets[c] = categoryDiffAMR(c)
+    allAMRCatsSets[c] = category_diff_amr(c)
 
 classFullSet = allAMRCatsSets['Class'][0]
 classHalfSet = allAMRCatsSets['Class'][1]
@@ -622,22 +623,22 @@ allGenusComps = []
 allSpeciesComps = []
 
 for p in phylumSetLists:
-    allPhylumComps.append(krakenConcat[krakenConcat['Name'].isin(p)])
+    allPhylumComps.append(kraken[kraken['Name'].isin(p)])
 
 for c in classSetLists:
-    allClassComps.append(krakenConcat[krakenConcat['Name'].isin(c)])
+    allClassComps.append(kraken[kraken['Name'].isin(c)])
 
 for o in orderSetLists:
-    allOrderComps.append(krakenConcat[krakenConcat['Name'].isin(o)])
+    allOrderComps.append(kraken[kraken['Name'].isin(o)])
 
 for f in familySetLists:
-    allFamilyComps.append(krakenConcat[krakenConcat['Name'].isin(f)])
+    allFamilyComps.append(kraken[kraken['Name'].isin(f)])
 
 for g in genusSetLists:
-    allGenusComps.append(krakenConcat[krakenConcat['Name'].isin(g)])
+    allGenusComps.append(kraken[kraken['Name'].isin(g)])
 
 for s in speciesSetLists:
-    allSpeciesComps.append(krakenConcat[krakenConcat['Name'].isin(s)])
+    allSpeciesComps.append(kraken[kraken['Name'].isin(s)])
 
 phylumSlices = zip(setOperationKeys, allPhylumComps)
 
