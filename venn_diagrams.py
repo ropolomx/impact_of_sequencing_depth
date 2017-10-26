@@ -4,6 +4,16 @@ import pandas as pd
 from pandas import ExcelWriter
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn3_unweighted
+import argparse
+
+def arguments():
+
+
+    parser = argparse.ArgumentParser(description='Generation of Venn diagrams from Kraken reports')
+    parser.add_argument('kraken_dir',default='./',help('Directory with concatenated Kraken report'))
+
+    return parser.parse_args()
+
 
 def read_kraken(report):
     kraken = pd.read_csv(report)
