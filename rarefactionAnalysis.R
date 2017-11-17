@@ -437,7 +437,7 @@ krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, 
 krakenAlphaRarefaction2DF$Depth <- str_replace(krakenAlphaRarefaction2DF$Depth, "QD", "D0.25")
 
 
-# Alpha Diversity and Species Richness boxplots ---------------------------
+# Alpha Diversity (rarefied) and Species Richness boxplots -------------------
 
 krakenAlphaRarefactionDF <- krakenAlphaRarefactionDF %>% filter(!Level %in% c("-", "D"))
 krakenAlphaRarefaction2DF <- krakenAlphaRarefaction2DF %>% filter(!Level %in% c("-", "D"))
@@ -476,6 +476,16 @@ ggsave(filename = 'amrSpeciesRichnessCB.png',
 
 krakenAllAlphaBoxPlots <- krakenAlphaRarefaction2DF %>%
     krakenAlphaDiv()
+
+ggsave(filename = 'krakenAlphaDivCB.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity',
+       plot = krakenAllAlphaBoxPlots,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+krakenAllShannonBoxPlots <- krakenAlphaRarefaction2DF %>%
+  krakenShannon()
 
 ggsave(filename = 'krakenAlphaDivCB.png',
        path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity',
