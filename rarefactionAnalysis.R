@@ -327,7 +327,7 @@ ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alpha
        units = "in")
 
 
-# Alpha Diversity and Species Richness calculations -----------------------
+# Alpha Diversity (rarefied) and Species Richness calculations -------------
 
 krakenAlphaRarefaction <- mclapply(krakenResultsMat, function(x){
   alpha_rarefaction(x, minlevel=0)
