@@ -523,12 +523,12 @@ amrReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(Number_of_reads, AMR_hits)) 
              alpha=0.6, 
              size=10, 
              pch=21, 
-             color="grey")+ 
-  geom_smooth(aes(group=1, weight=0.2), 
-              method="lm", 
-              se=FALSE, 
-              colour="grey", 
-              alpha=0.5) 
+             color="grey") 
+  # geom_smooth(aes(group=1, weight=0.2), 
+  #             method="lm", 
+  #             se=FALSE, 
+  #             colour="grey", 
+  #             alpha=0.5) 
 
 amrReadsvsHitsCor +
   ylab("Number of AMR Hits\n") +
@@ -550,32 +550,13 @@ ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/amrRe
        height=8.50,
        units="in")
 
-amrReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(Number_of_reads, AMR_hits)) + 
-  geom_point(alpha=0.4, size=4) + 
-  geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5)
-
-amrReadsvsHitsCor + 
-  ylab("Number of AMR Hits\n") + 
-  xlab("\nNumber of reads") + 
-  theme(axis.text.y=element_text(size=35),
-        axis.title.y=element_text(size=44),
-          axis.text.x=element_text(size=35),
-          axis.title.x=element_text(size=44),
-          legend.title=element_text(size=36),
-          legend.text=element_text(size=36, vjust=0.5),
-        legend.key = element_rect(size = 2),
-        legend.key.size = unit(2, "lines"),
-        legend.spacing = unit(0.2,"lines")) + 
-  scale_color_manual(values=vennPalette, 
-                    name="Sample type\n")
-
 # Generating kraken correlation plot
 
 krakenReadsvsHitsCorTest <- cor.test(x = krakenReadstoHitRatio$Reads, krakenReadstoHitRatio$KrakenHits, method = "spearman")
 
 krakenReadsvsHitsCor <- ggplot(krakenReadstoHitRatio, aes(Reads, KrakenHits)) + 
-  geom_point(aes(fill=Sample_type), alpha=0.6, size=10, pch=21, color="grey")+ 
-  geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
+  geom_point(aes(fill=Sample_type), alpha=0.6, size=10, pch=21, color="grey") 
+  # geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
 
 krakenReadsvsHitsCor +
   ylab("Number of Kraken Hits\n") +
