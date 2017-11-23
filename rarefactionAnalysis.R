@@ -50,7 +50,7 @@ amrResultsFiltered <- read_csv(Sys.glob(file.path(
   'amrFiltered_75_genefrac.csv'))
   )
 
-amrReadstoHitRatio <- read_tsv('~/amr/2-4-8_results/2_4_8_study_RZ/hitToReadRatios.tsv')
+amrReadstoHitRatio <- read_tsv('~/amr/2-4-8_results/2_4_8_study_RZ/reads_and_hits.tsv')
 
 # Read Kraken concatenated and filtered file (no Eukaryotes, and no PhiX)
 
@@ -179,47 +179,87 @@ krakenResultsMat <- lapply(krakenResultsMat, function(x){
 # Transform dataframes into wide format
 # Fill NAs with a value of zero
 
-amrResultsAnalytical <- amrResultsFiltered %>%
-  select(Gene, Hits, Sample) %>%
-  spread(Sample, Hits, fill = 0, convert = TRUE)
+# Splitting by Depth
 
-krakenResultsAnalytical <- krakenResultsFiltered %>%
-  select(TaxID, CladeReads, Sample) %>%
-  spread(Sample, CladeReads, fill = 0, convert = TRUE)
+amrResultsbyDepth <- amrResultsFiltered %>%
+  split(.$Sample_type)
 
-amrAnalyticalMatrix <- matrixAMRanalytical(amrResultsAnalytical)
+amrAnalytical <- lapply(amrResultsbyDepth, function(x){
+  amrAnalyticWide <- x %>% 
+    select(Gene, Hits, Sample) %>%
+    spread(Sample, Hits, fill = 0, convert = TRUE)
+  return(amrAnalyticWide)
+})
+  
+  
+#   lapply(amrResultsbyDepth, function(x){
+#   amrResultsWide <- x %>% 
+#     group_by(Sample) %>%
+#     select(Sample, Hits, CategoryName) %>%
+#     mutate(id=1:n()) %>%
+#     spread(key=Sample, value=Hits, fill = 0) %>% 
+#     select(-id)
+#   return(amrResultsWide)
+# })
+#  
 
-krakenAnalyticalMatrix <- matrixKraken(krakenResultsAnalytical)
+krakenResultsbyDepth <- krakenResultsFiltered %>%
+  split(.$Sample_Type)
+
+krakenAnalytical <- lapply(krakenResultsbyDepth, function(x){
+  krakenAnalyticWide <- x %>% 
+    select(TaxID, CladeReads, Sample) %>%
+    spread(Sample, CladeReads, fill = 0, convert = TRUE)
+  return(krakenAnalyticWide)
+})
+  
+amrAnalytical <- lapply(amrAnalytical, function(x){
+  amrAnaMat <- matrixAMRanalytical(x)
+  
+  return(amrAnaMat)
+})
+
+krakenAnalytical <- lapply(krakenAnalytical, function(x){
+  krakenAnaMat <- matrixKraken(x)
+  return(krakenAnaMat)
+})
 
 krakenTaxInfo <- krakenResultsFiltered  %>% select(2:ncol(.))
 
 krakenTaxInfo$TaxID <- as.character(krakenTaxInfo$TaxID)
 
-amrExp <- newMRexperiment(amrAnalyticalMatrix[rowSums(amrAnalyticalMatrix) > 0, ])
 
-krakenExp <- newMRexperiment(krakenAnalyticalMatrix[rowSums(krakenAnalyticalMatrix) > 0,])
+amrExp <- lapply(amrAnalytical, function(x){
+  amrMR <- newMRexperiment(x[rowSums(x) > 0, ])
+  return(amrMR)
+})
+                 
+krakenExp <- lapply(krakenAnalytical, function(x){
+  krakenMR <- newMRexperiment(x[rowSums(x) > 0, ])
+  return(krakenMR)
+})
+                 
 
-cumNorm(amrExp)
+amrNorm <- lapply(amrExp, function(x){
+  amrCSS <- cumNorm(x)
+})
 
-cumNorm(krakenExp)
+amrNorm <- lapply(amrNorm, function(x){
+  amrCSSdf <- data.frame(MRcounts(x, norm = T))
+})
 
-amrRaw <- data.frame(MRcounts(amrExp, norm=F))
 
-amrNorm <- data.frame(MRcounts(amrExp, norm=T))
+krakenNorm <- lapply(krakenExp, function(x){
+  krakenCSS <- cumNorm(x)
+})
 
-krakenRaw <- data.frame(MRcounts(krakenExp, norm=F))
-
-krakenNorm <- data.frame(MRcounts(krakenExp, norm=T))
+krakenNorm <- lapply(krakenNorm, function(x){
+  krakenCSSdf <- data.frame(MRcounts(x, norm = T))
+})
 
 amrGenes <- row.names(amrAnalyticalMatrix) 
 
 amrAnnotations <- read_tsv('amr_genes.tabular_parsed.tab')
-
-amrNorm <- cbind(amrNorm, amrAnnotations)
-
-krakenNorm <- krakenNorm %>%
-  mutate(TaxID = row.names(krakenAnalyticalMatrix))
-
 
 # Tidy normalized datasets ------------------------------------------------
 
@@ -231,7 +271,7 @@ amrNormTidy <- amrNorm %>%
 krakenNorm <- left_join(krakenNorm, krakenTaxInfo, by="TaxID")
 
 krakenNormTidy <- krakenNorm %>%
-  gather(key = samples, value = normCounts, 1:32) 
+  gather(key = samples, value = normCounts, 1:32) %>%
   mutate(sampleType=str_extract(samples, "^[A-Z]+"))
 
 
@@ -270,7 +310,7 @@ krakenNormAgg <- krakenNormTidy %>%
   split(.$TaxRank)
   
 krakenNormAgg <- lapply(krakenNormAgg, function(x){
-  group_by(x, categoryNames, samples) %>%
+  group_by(x, Name, samples) %>%
     summarise(normCountsSum = sum(normCounts))
 })
 
@@ -622,11 +662,11 @@ amrReadstoHitRatio$Sample_type <- str_replace(amrReadstoHitRatio$Sample_type, "H
 
 amrReadstoHitRatio$Sample_type <- str_replace(amrReadstoHitRatio$Sample_type, "Q", "D0.25")
 
-amrReadsvsHits <- cor(x = amrReadstoHitRatio$Number_of_reads, amrReadstoHitRatio$AMR_hits, method = "spearman")
+amrReadsvsHits <- cor(x = amrReadstoHitRatio$`Number of reads`, amrReadstoHitRatio$`AMR hits`, method = "spearman")
 
-amrReadsvsHitsCorTest <- cor.test(x = amrReadstoHitRatio$Number_of_reads, amrReadstoHitRatio$AMR_hits, method = "spearman")
+amrReadsvsHitsCorTest <- cor.test(x = amrReadstoHitRatio$`Number of reads`, amrReadstoHitRatio$`AMR hits`, method = "spearman")
 
-amrReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(Number_of_reads, AMR_hits)) + 
+amrReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(`Number of reads`, `AMR hits`)) + 
   geom_point(aes(fill=Sample_type), 
              alpha=0.6, 
              size=10, 
@@ -653,16 +693,16 @@ amrReadsvsHitsCor +
         panel.background = element_rect(fill = "grey90", colour = "grey80")) +
   scale_fill_manual(values=rev(cbPalette),
                      name="Sequencing Depth\n")
-ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/amrReadsvsHitsCorCBScheme.png', 
+ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/amrReadsvsHitsCorUpdated.png', 
        width=14, 
        height=8.50,
        units="in")
 
 # Generating kraken correlation plot
 
-krakenReadsvsHitsCorTest <- cor.test(x = krakenReadstoHitRatio$Reads, krakenReadstoHitRatio$KrakenHits, method = "spearman")
+krakenReadsvsHitsCorTest <- cor.test(x = amrReadstoHitRatio$`Number of reads`, amrReadstoHitRatio$Phylum_hits, method = "spearman")
 
-krakenReadsvsHitsCor <- ggplot(krakenReadstoHitRatio, aes(Reads, KrakenHits)) + 
+krakenReadsvsHitsCor <- ggplot(amrReadstoHitRatio, aes(`Number of reads`, Phylum_hits)) + 
   geom_point(aes(fill=Sample_type), alpha=0.6, size=10, pch=21, color="grey") 
   # geom_smooth(aes(group=1, weight=0.2), method="lm", se=FALSE, colour="grey", alpha=0.5) 
 
@@ -682,7 +722,7 @@ krakenReadsvsHitsCor +
   scale_fill_manual(values=rev(cbPalette),
                      name="Sequencing Depth\n")
 
-ggsave(filename='krakenReadsvsHitsCorCBScheme.png', 
+ggsave(filename='krakenReadsvsHitsCorUpdated.png', 
        path='~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017',
        width=14, 
        height=8.50,

@@ -117,7 +117,7 @@ matrixAMRanalytical <- function(amrLevelWide) {
 #' 
 #' 
 matrixKraken <- function(krakenLevelWide) {
-  krakenLevelMat <- as.data.frame(krakenLevelWide[,c(2:33)])
+  krakenLevelMat <- as.data.frame(krakenLevelWide[,c(2:ncol(krakenLevelWide))])
   row.names(krakenLevelMat) <- krakenLevelWide$TaxID
   return(krakenLevelMat)
 }
