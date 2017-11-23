@@ -184,7 +184,7 @@ amrResultsAnalytical <- amrResultsFiltered %>%
   spread(Sample, Hits, fill = 0, convert = TRUE)
 
 krakenResultsAnalytical <- krakenResultsFiltered %>%
-  select(TaxID, CladeReads, Sample) %>%
+  select(TaxLineage, CladeReads, Sample) %>%
   spread(Sample, CladeReads, fill = 0, convert = TRUE)
 
 amrAnalyticalMatrix <- matrixAMRanalytical(amrResultsAnalytical)
@@ -207,17 +207,25 @@ krakenRaw <- data.frame(MRcounts(krakenExp, norm=F))
 
 krakenNorm <- data.frame(MRcounts(krakenExp, norm=T))
 
-amrNormMeta <- left_join()
+amrGenes <- row.names(amrAnalyticalMatrix) 
 
-krakenNormTrans <- as.data.frame(t(krakenNorm))
+amrAnnotations <- read_tsv('amr_genes.tabular_parsed.tab')
 
-amrNormTrans$Sample <- row.names(amrNormTrans)
+amrNorm <- cbind(amrNorm, amrAnnotations)
 
-krakenNormTrans$Sample <- row.names(krakenNormTrans)
+krakenNorm$lineage <- row.names(krakenAnalyticalMatrix)
 
-amrNormTrans$SampleType <- row.names(str_extract(amrNormTrans$Sample, "^[A-Z]+"))
+krakenNorm <- krakenNorm %>% separate(lineage, c('Domain',
+                                   'Phylum',
+                                    'Class',
+                                    'Order',
+                                    'Family',
+                                    'Genus',
+                                    'Species'),
+                        sep = "|", fill = "right")
 
-krakenNormTrans$SampleType <- row.names(str_extract(krakenNormTrans$Sample, "^[A-Z]+"))
+
+
 
 amr_class <- amr_norm[, lapply(.SD, sum), by='class', .SDcols=!c('header', 'mechanism', 'group')] 
 
