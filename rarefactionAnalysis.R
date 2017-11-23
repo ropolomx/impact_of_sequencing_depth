@@ -110,7 +110,7 @@ krakenTaxa <- levels(krakenResultsFiltered$TaxRank)
 
 # Split results by categories ---------------------------------------------
 
-# Will adopt split, apply, combine strategy
+# Will adopt the split, apply, combine strategy
 # Using the names of the AMR categories and taxonomic ranks as names of the 
 # elements of the lists
 
@@ -199,9 +199,9 @@ cumNorm(amrExp)
 
 cumNorm(krakenExp)
 
-amrRaw <- data.table(MRcounts(amrExp, norm=F))
+amrRaw <- data.frame(MRcounts(amrExp, norm=F))
 
-amrNorm <- data.table(MRcounts(amrExp, norm=T))
+amrNorm <- data.frame(MRcounts(amrExp, norm=T))
 
 krakenRaw <- data.frame(MRcounts(krakenExp, norm=F))
 
