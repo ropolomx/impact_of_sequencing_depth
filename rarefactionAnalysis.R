@@ -244,13 +244,46 @@ amrNormAgg <- lapply(amrNormAgg, function(x){
   group_by(x, categoryNames, samples) %>%
     summarise(normCountsSum = sum(normCounts))
 })
-  
-krakenNormAgg <- krakenNormTidy %>%
-  split(.$TaxRank)
 
-krakenNormAgg <- lapply(krakenNormAgg, function(x){
-  group_by(x, Name, )
+amrNormDivMat <- lapply(amrNormAgg, function(x){
+  amrNormWide <- spread(x, key=1, value=3)
+  row.names(amrNormWide) <- amrNormWide$samples
+  amrNormWide <- amrNormWide %>%
+    select(2:ncol(amrNormWide))
+  return(amrNormWide)
 })
+
+amrDiversity <- lapply(amrNormDivMat, function(x){
+  observed_richness <- specnumber(x, MARGIN=1)
+  invsimpson <- diversity(x, index="invsimpson", MARGIN=1)
+  simpson <- diversity(x, index="simpson", MARGIN=1)
+  shannon <- diversity(x, index="shannon", MARGIN=1)
+  evenness <- shannon/log(observed_richness)
+  return(list(observed_richness=observed_richness,
+              simpson = simpson,
+              shannon = shannon,
+              evenness=evenness))
+})
+
+krakenNormAgg <- krakenNormTidy %>% 
+  filter(TaxRank != "-") %>% 
+  split(.$TaxRank)
+  
+krakenNormAgg <- lapply(krakenNormAgg, function(x){
+  group_by(x, categoryNames, samples) %>%
+    summarise(normCountsSum = sum(normCounts))
+})
+
+krakenNormDivMat <- lapply(krakenNormAgg, function(x){
+  krakenNormWide <- x %>%
+    select(Sample, Name, normCounts) %>%
+    spread(key=Name, value=normCounts)
+  row.names(krakenNormWide) <- krakenNormWide$Sample
+  krakenNormWide <- krakenNormWide %>%
+    select(2:ncol(krakenNormWide))
+  return(krakenNormWide)
+})
+
 
 # Construction of rarefaction curves --------------------------------------
 
@@ -572,7 +605,7 @@ ggsave(filename = 'krakenAlphaDivCB.png',
 krakenAllSpRawBoxPlots <- krakenAlphaRarefaction2DF %>%
   krakenRawSpeciesRich()
 
-ggsave(filename = 'krakenSpRichnessCB.png' ,
+ggsave(filename = 'krakenSpRichnessCB.png',
        path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity',
        plot = krakenAllSpRawBoxPlots,
        width = 10.50,
