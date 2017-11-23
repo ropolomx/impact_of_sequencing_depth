@@ -191,6 +191,8 @@ amrAnalyticalMatrix <- matrixAMRanalytical(amrResultsAnalytical)
 
 krakenAnalyticalMatrix <- matrixKraken(krakenResultsAnalytical)
 
+krakenTax <- krakenResultsFiltered  %>% select(2:ncol(.))
+
 amrExp <- newMRexperiment(amrAnalyticalMatrix[rowSums(amrAnalyticalMatrix) > 0, ])
 
 krakenExp <- newMRexperiment(krakenAnalyticalMatrix[rowSums(krakenAnalyticalMatrix) > 0,])
@@ -225,8 +227,19 @@ krakenNorm <- krakenNorm %>% separate(lineage, c('Domain',
                         sep = "|", fill = "right")
 
 
+# Tidy normalized datasets ------------------------------------------------
 
+amrNormTidy <- amrNorm %>% 
+  gather(key = samples, value = normCounts, 1:32) %>%
+  gather(key = category, value = categoryNames, 1:4) %>%
+  mutate(sampleType=str_extract(samples, "^[A-Z]+"))
+  
+krakenNormTidy <- krakenNorm %>%
+  gather(key = samples, value = normCounts, 1:32) %>%
+  gather(key = taxon, value = taxonNames, 1:7) %>%
+  mutate(sampleType=str_extract(samples, "^[A-Z]+"))
 
+  
 amr_class <- amr_norm[, lapply(.SD, sum), by='class', .SDcols=!c('header', 'mechanism', 'group')] 
 
 amr_class_analytic <- newMRexperiment(counts=amr_class[, .SD, .SDcols=!'class']) rownames(amr_class_analytic) <- amr_class$class
