@@ -184,14 +184,16 @@ amrResultsAnalytical <- amrResultsFiltered %>%
   spread(Sample, Hits, fill = 0, convert = TRUE)
 
 krakenResultsAnalytical <- krakenResultsFiltered %>%
-  select(TaxLineage, CladeReads, Sample) %>%
+  select(TaxID, CladeReads, Sample) %>%
   spread(Sample, CladeReads, fill = 0, convert = TRUE)
 
 amrAnalyticalMatrix <- matrixAMRanalytical(amrResultsAnalytical)
 
 krakenAnalyticalMatrix <- matrixKraken(krakenResultsAnalytical)
 
-krakenTax <- krakenResultsFiltered  %>% select(2:ncol(.))
+krakenTaxInfo <- krakenResultsFiltered  %>% select(2:ncol(.))
+
+krakenTaxInfo$TaxID <- as.character(krakenTaxInfo$TaxID)
 
 amrExp <- newMRexperiment(amrAnalyticalMatrix[rowSums(amrAnalyticalMatrix) > 0, ])
 
@@ -215,16 +217,8 @@ amrAnnotations <- read_tsv('amr_genes.tabular_parsed.tab')
 
 amrNorm <- cbind(amrNorm, amrAnnotations)
 
-krakenNorm$lineage <- row.names(krakenAnalyticalMatrix)
-
-krakenNorm <- krakenNorm %>% separate(lineage, c('Domain',
-                                   'Phylum',
-                                    'Class',
-                                    'Order',
-                                    'Family',
-                                    'Genus',
-                                    'Species'),
-                        sep = "|", fill = "right")
+krakenNorm <- krakenNorm %>%
+  mutate(TaxID = row.names(krakenAnalyticalMatrix))
 
 
 # Tidy normalized datasets ------------------------------------------------
@@ -234,15 +228,29 @@ amrNormTidy <- amrNorm %>%
   gather(key = category, value = categoryNames, 1:4) %>%
   mutate(sampleType=str_extract(samples, "^[A-Z]+"))
   
+krakenNorm <- left_join(krakenNorm, krakenTaxInfo, by="TaxID")
+
 krakenNormTidy <- krakenNorm %>%
-  gather(key = samples, value = normCounts, 1:32) %>%
-  gather(key = taxon, value = taxonNames, 1:7) %>%
+  gather(key = samples, value = normCounts, 1:32) 
   mutate(sampleType=str_extract(samples, "^[A-Z]+"))
 
-  
-amr_class <- amr_norm[, lapply(.SD, sum), by='class', .SDcols=!c('header', 'mechanism', 'group')] 
 
-amr_class_analytic <- newMRexperiment(counts=amr_class[, .SD, .SDcols=!'class']) rownames(amr_class_analytic) <- amr_class$class
+# Split, apply, combine: aggregate AMR and Kraken -------------------------
+
+amrNormAgg <- amrNormTidy %>% 
+    split(.$category)
+  
+amrNormAgg <- lapply(amrNormAgg, function(x){
+  group_by(x, categoryNames, samples) %>%
+    summarise(normCountsSum = sum(normCounts))
+})
+  
+krakenNormAgg <- krakenNormTidy %>%
+  split(.$TaxRank)
+
+krakenNormAgg <- lapply(krakenNormAgg, function(x){
+  group_by(x, Name, )
+})
 
 # Construction of rarefaction curves --------------------------------------
 
