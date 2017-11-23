@@ -90,6 +90,22 @@ matrixAMR <- function(amrLevelWide) {
   row.names(amrLevelMat) <- amrLevelWide$CategoryName
   return(amrLevelMat)
 }
+
+#' Title
+#'
+#' @param amrLevelWide 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' 
+matrixAMRanalytical <- function(amrLevelWide) {
+  amrLevelMat <- amrLevelWide[,2:ncol(amrLevelWide)]
+  row.names(amrLevelMat) <- amrLevelWide$Gene
+  return(amrLevelMat)
+}
+
 #' Title
 #'
 #' @param krakenLevelWide 

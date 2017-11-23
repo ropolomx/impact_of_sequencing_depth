@@ -33,23 +33,37 @@ cbPalette <- c("#FFCD48", # Mango from Crayola palette
                dichromat::colorschemes$Categorical.12[8], # Blue from dichromat package
                  dichromat::colorschemes$Categorical.12[12]) # Red from dichromat package
 
-
-
 # Load and filter AMR and Kraken data -------------------------------------
 
 # Results generated with Coverage Sampler and filtered with Python-Pandas
 # Filtering involved keeping results with gene fraction >= 75% and 
 # removing all those results with genes that require SNP confirmation.
 
-amrResultsFiltered <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/cov_sampler_parsed/amrFiltered_75_genefrac.csv')
+amrResultsFiltered <- read_csv(Sys.glob(file.path(
+  '~',
+  'aafc',
+  'amr',
+  'amrplusplus_rarefaction_analysis',
+  '2_4_8_study_RZ',
+  'Results_Aug2017',
+  'Parsed_Aug2017',
+  'amrFiltered_75_genefrac.csv'))
+  )
 
 amrReadstoHitRatio <- read_tsv('~/amr/2-4-8_results/2_4_8_study_RZ/hitToReadRatios.tsv')
 
 # Read Kraken concatenated and filtered file (no Eukaryotes, and no PhiX)
 
-krakenResultsFiltered <- read.table('~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/allKraken_FHQ/kraken_filtered/krakenConcat.tsv', 
-                                    sep="\t", 
-                                    header=TRUE)
+krakenResultsFiltered <- read.delim(Sys.glob(file.path(
+  '~',
+  'aafc',
+  'amr',
+  'amrplusplus_rarefaction_analysis',
+  '2_4_8_study_RZ',
+  'Results_Aug2017',
+  'krakenConcat.tsv')),
+  stringsAsFactors = FALSE
+  )
 
 # Remove D0.25_seqtk data from filtered data frame
 
@@ -157,6 +171,49 @@ krakenResultsMat <- lapply(krakenResultsMat, function(x){
   t(x)
   
 })
+
+
+# CSS Normalization -------------------------------------------------------
+
+# Process data frames into CSU analytic format 
+
+amrResultsAnalytical <- amrResultsFiltered %>%
+  select(Gene, Hits, Sample) %>%
+  spread(Sample, Hits, fill = 0, convert = TRUE)
+
+krakenResultsAnalytical <- krakenResultsFiltered %>%
+  select(TaxID, CladeReads, Sample) %>%
+  spread(Sample, CladeReads, fill = 0, convert = TRUE)
+
+amrAnalyticalMatrix <- matrixAMRanalytical(amrResultsAnalytical)
+
+krakenAnalyticalMatrix <- matrixKraken(krakenResultsAnalytical)
+
+amrExp <- newMRexperiment(amrAnalyticalMatrix[rowSums(amrAnalyticalMatrix) > 0, ])
+
+krakenExp <- newMRexperiment(krakenAnalyticalMatrix[rowSums(krakenAnalyticalMatrix) > 0,])
+
+cumNorm(amrExp)
+
+cumNorm(krakenExp)
+
+amrRaw <- data.table(MRcounts(amrExp, norm=F))
+
+amrNorm <- data.table(MRcounts(amrExp, norm=T))
+
+krakenRaw <- data.table(MRcounts(krakenExp, norm=F))
+
+krakenNorm <- data.table(MRcounts(krakenExp, norm=T))
+
+cazomeNormMeta <- as.data.frame(t(cazomeNorm))
+
+cazomeNormMeta$Animal <- as.character(animal)
+
+cazomeNormMeta$Period <- cazomeMetadata$Period
+
+cazomeNormMeta$Efficiency <- cazomeMetadata$Efficiency
+
+
 
 # Construction of rarefaction curves --------------------------------------
 

@@ -6,6 +6,10 @@ amrSummariesMechanism <- summarizeAMRlevels(amrResults, amrLevel = "Mechanism")
 amrSummariesGroup <- summarizeAMRlevels(amrResults, amrLevel = "Group")
 
 amrMatGroup <- matrixAMR(amrWideGroup)
+
+
+# Rarefaction strategy ----------------------------------------------------
+
 rarefyGroupDF <- lapply(rarefyGroup$rarefy_out, unlist)
 rarefyGroupDF <- lapply(rarefyGroupDF, data.frame)
 rarefyGroupDF <- do.call("rbind", rarefyGroupDF[1:32])
