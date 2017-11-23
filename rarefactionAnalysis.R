@@ -81,6 +81,7 @@ amrResultsTidy <- amrResultsFiltered %>%
   gather(Level, LevelName, c(1,6:8))
 
 # Change the names of the AMR sequencing depths columns
+# Make this more functional
 
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Sample, "\\d+_","")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "\\d$","")
@@ -114,7 +115,7 @@ krakenTaxa <- levels(krakenResultsFiltered$TaxRank)
 # elements of the lists
 
 amrResultsList <- amrResultsTidy %>% 
-  split(.$Category) %>% #splitting dataframe using base R but with purrr's piping
+  split(.$Category) %>% #splitting dataframe using base R but with purrr's magrittr piping
   set_names(nm=amrCategories)
 
 
@@ -175,7 +176,8 @@ krakenResultsMat <- lapply(krakenResultsMat, function(x){
 
 # CSS Normalization -------------------------------------------------------
 
-# Process data frames into CSU analytic format 
+# Transform dataframes into wide format
+# Fill NAs with a value of zero
 
 amrResultsAnalytical <- amrResultsFiltered %>%
   select(Gene, Hits, Sample) %>%
@@ -201,11 +203,11 @@ amrRaw <- data.table(MRcounts(amrExp, norm=F))
 
 amrNorm <- data.table(MRcounts(amrExp, norm=T))
 
-krakenRaw <- data.table(MRcounts(krakenExp, norm=F))
+krakenRaw <- data.frame(MRcounts(krakenExp, norm=F))
 
-krakenNorm <- data.table(MRcounts(krakenExp, norm=T))
+krakenNorm <- data.frame(MRcounts(krakenExp, norm=T))
 
-amrNormTrans <- as.data.frame(t(amrNorm))
+amrNormMeta <- left_join()
 
 krakenNormTrans <- as.data.frame(t(krakenNorm))
 
@@ -216,6 +218,10 @@ krakenNormTrans$Sample <- row.names(krakenNormTrans)
 amrNormTrans$SampleType <- row.names(str_extract(amrNormTrans$Sample, "^[A-Z]+"))
 
 krakenNormTrans$SampleType <- row.names(str_extract(krakenNormTrans$Sample, "^[A-Z]+"))
+
+amr_class <- amr_norm[, lapply(.SD, sum), by='class', .SDcols=!c('header', 'mechanism', 'group')] 
+
+amr_class_analytic <- newMRexperiment(counts=amr_class[, .SD, .SDcols=!'class']) rownames(amr_class_analytic) <- amr_class$class
 
 # Construction of rarefaction curves --------------------------------------
 
@@ -349,10 +355,8 @@ krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "F", "Fami
 krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "G", "Genera")
 krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "S", "Species")
 
-
 amrAllList <- amrRarCurveDF %>% 
   split(.$AMRLevel)
-
 
 amrAllRarCurves <- amrAllList %>%
   map(function(x){
@@ -430,26 +434,9 @@ foreach(i=amrAlphaRarefaction, j=amrCategories) %do%
 foreach(i=krakenAlphaRarefaction, j=krakenTaxa) %do%
   rep(j,length(i$ID)) -> i$Level
 
-#krakenAlphaRarefaction[[1]]$Level <- rep(krakenTaxa[[1]], length(krakenAlphaRarefaction[[1]]$ID))
-#krakenAlphaRarefaction[[2]]$Level <- rep(krakenTaxa[[2]], length(krakenAlphaRarefaction[[2]]$ID))
-#krakenAlphaRarefaction[[3]]$Level <- rep(krakenTaxa[[3]], length(krakenAlphaRarefaction[[3]]$ID))
-#krakenAlphaRarefaction[[4]]$Level <- rep(krakenTaxa[[4]], length(krakenAlphaRarefaction[[4]]$ID))
-#krakenAlphaRarefaction[[5]]$Level <- rep(krakenTaxa[[5]], length(krakenAlphaRarefaction[[5]]$ID))
-#krakenAlphaRarefaction[[6]]$Level <- rep(krakenTaxa[[6]], length(krakenAlphaRarefaction[[6]]$ID))
-#krakenAlphaRarefaction[[7]]$Level <- rep(krakenTaxa[[7]], length(krakenAlphaRarefaction[[7]]$ID))
-#krakenAlphaRarefaction[[8]]$Level <- rep(krakenTaxa[[8]], length(krakenAlphaRarefaction[[8]]$ID))
 
 foreach(i=krakenAlphaRarefaction2, j=krakenTaxa) %do%
   rep(j,length(i$ID)) -> i$Level
-
-#krakenAlphaRarefaction2[[1]]$Level <- rep(krakenTaxa[[1]], length(krakenAlphaRarefaction2[[1]]$ID))
-#krakenAlphaRarefaction2[[2]]$Level <- rep(krakenTaxa[[2]], length(krakenAlphaRarefaction2[[2]]$ID))
-#krakenAlphaRarefaction2[[3]]$Level <- rep(krakenTaxa[[3]], length(krakenAlphaRarefaction2[[3]]$ID))
-#krakenAlphaRarefaction2[[4]]$Level <- rep(krakenTaxa[[4]], length(krakenAlphaRarefaction2[[4]]$ID))
-#krakenAlphaRarefaction2[[5]]$Level <- rep(krakenTaxa[[5]], length(krakenAlphaRarefaction2[[5]]$ID))
-#krakenAlphaRarefaction2[[6]]$Level <- rep(krakenTaxa[[6]], length(krakenAlphaRarefaction2[[6]]$ID))
-#krakenAlphaRarefaction2[[7]]$Level <- rep(krakenTaxa[[7]], length(krakenAlphaRarefaction2[[7]]$ID))
-#krakenAlphaRarefaction2[[8]]$Level <- rep(krakenTaxa[[8]], length(krakenAlphaRarefaction2[[8]]$ID))
 
 # Seems like unnecessary repetition to convert these to data frames when they
 # could have been created as dataframes
