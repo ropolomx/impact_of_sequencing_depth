@@ -205,15 +205,17 @@ krakenRaw <- data.table(MRcounts(krakenExp, norm=F))
 
 krakenNorm <- data.table(MRcounts(krakenExp, norm=T))
 
-cazomeNormMeta <- as.data.frame(t(cazomeNorm))
+amrNormTrans <- as.data.frame(t(amrNorm))
 
-cazomeNormMeta$Animal <- as.character(animal)
+krakenNormTrans <- as.data.frame(t(krakenNorm))
 
-cazomeNormMeta$Period <- cazomeMetadata$Period
+amrNormTrans$Sample <- row.names(amrNormTrans)
 
-cazomeNormMeta$Efficiency <- cazomeMetadata$Efficiency
+krakenNormTrans$Sample <- row.names(krakenNormTrans)
 
+amrNormTrans$SampleType <- row.names(str_extract(amrNormTrans$Sample, "^[A-Z]+"))
 
+krakenNormTrans$SampleType <- row.names(str_extract(krakenNormTrans$Sample, "^[A-Z]+"))
 
 # Construction of rarefaction curves --------------------------------------
 
