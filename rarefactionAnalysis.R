@@ -13,6 +13,7 @@ library(ggplot2)
 library(metagenomeSeq)
 library(vegan)
 library(scales)
+library(PMCMR)
 
 # Source utility functions ------------------------------------------------
 
@@ -382,10 +383,10 @@ amrDiversityDF$Level <- factor(amrDiversityDF$Level,
 amrEstimatedDF <- do.call("rbind", amrEstimated)
 
 amrEstimatedDF <- amrEstimatedDF %>% 
-  mutate(Level=row.names(amrEstimatedDF)) %>% 
-  separate(Level, 
+  mutate(amrLevel=row.names(amrEstimatedDF)) %>% 
+  separate(amrLevel, 
            into = c("Level", "Depth"),
-           remove = TRUE)
+           sep="\\.")
 
 krakenNormAgg <- krakenAllDepths %>% 
     split(.$TaxRank)
@@ -460,12 +461,14 @@ krakenDiversityDF$Level <- factor(krakenDiversityDF$Level,
 krakenEstimatedDF <- do.call("rbind", krakenEstimated)
 
 krakenEstimatedDF <- krakenEstimatedDF %>% 
-  mutate(Level=row.names(krakenEstimatedDF)) %>% 
-  separate(Level,
-           into = c("krakenLevel", "sampleType"),
+  mutate(krakenLevel=row.names(krakenEstimatedDF)) %>% 
+  separate(krakenLevel,
+           into = c("Level", "Depth"),
            remove = TRUE)
 
+write_csv(krakenEstimatedDF, '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/kraken_estimated_richness.csv')
 
+write_csv(amrEstimatedDF, '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/amr_estimated_richness.csv')
 
 # Normalized boxplots -----------------------------------------------------
 
@@ -968,14 +971,116 @@ krakenAlphaPosthoc <- krakenAlphaRarefactionLevels %>%
     posthoc.kruskal.nemenyi.test(AlphaDiv ~ Depth, data = x, dist="Chisq")
   })
 
-# Computing aggregated sums of hits ---------------------------------------
 
-krakenPhylumResults <- krakenResultsList[["P"]]
+# Kruskal-Wallis tests of normalized diversity data -----------------------
 
-krakenPhylumResults$SampleID <- str_replace(krakenPhylumResults$Sample, "_00[6-8]")
+# Resistome
 
-krakenPhylumSums <- krakenPhylumResults %>%
-  group_by(TaxID, SampleID, Sample_Type) %>%
-  summarise(MeanHits = mean(CladeReads)) %>%
-  group_by(SampleID) %>%
-  summarise(SumHits = sum(MeanHits))
+amrDiversityLevels <- amrDiversityDF %>%
+  split(.$Level)
+
+amrInvSimpsonKruskall <- amrDiversityLevels %>%
+  map(function(x){
+    kruskal.test(InvSimpson ~ as.factor(Depth), data = x)
+    })
+
+amrISKruskallTidy <- lapply(amrInvSimpsonKruskall, function(x){
+  tidy(x)
+})
+
+amrISKruskallTidy <- do.call("rbind", amrISKruskallTidy)
+
+write.csv(amrISKruskallTidy, '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/amrInvSimpsonKruskalWallis_dos.csv', row.names=TRUE)
+
+amrShannonKruskall <- amrDiversityLevels %>%
+  map(function(x){
+    kruskal.test(Shannon ~ as.factor(Depth), data = x)
+  })
+
+amrShannonKruskallTidy <- lapply(amrShannonKruskall, function(x){
+  tidy(x)
+})
+
+amrShannonKruskallTidy <- do.call("rbind", amrShannonKruskallTidy)
+
+write.csv(amrShannonKruskallTidy, '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/amrShannonKruskalWallis_dos.csv', row.names=TRUE)
+
+amrShannonPostHoc <- amrDiversityLevels %>%
+  map(function(x){
+    posthoc.kruskal.nemenyi.test(Shannon ~ as.factor(Depth), data=x, dist="Chisq")
+  })
+
+
+amrAlphaKruskal <- amrAlphaRarefactionLevels %>%
+  map(function(x){
+    kruskal.test(AlphaDiv ~ Depth, data = x)
+  })
+
+amrAlphaPosthoc <- amrAlphaRarefactionLevels %>%
+  map(function(x){
+    posthoc.kruskal.nemenyi.test(AlphaDiv ~ Depth, data = x, dist="Chisq")
+  })
+
+# Microbiome
+
+krakenAlphaRarefaction2DF$Depth <- as.factor(krakenAlphaRarefaction2DF$Depth)
+
+krakenAlphaRarefactionLevels <- krakenAlphaRarefaction2DF %>%
+  split(.$Level)
+
+krakenRichnessKruskal <- krakenAlphaRarefactionLevels %>%
+  map(function(x){
+    kruskal.test(RawSpeccolor=Sample_typeiesAbundance ~ Depth, data = x)
+    })
+
+krakenRichnessPosthoc <- krakenAlphaRarefactionLevels %>%
+  map(function(x){
+    posthoc.kruskal.nemenyi.test(RawSpeciesAbundance ~ Depth, data=x, dist="Chisq")
+  })
+
+krakenAlphaKruskal <- krakenAlphaRarefactionLevels %>%
+  map(function(x){
+    kruskal.test(AlphaDiv ~ Depth, data = x)
+  })
+
+krakenAlphaPosthoc <- krakenAlphaRarefactionLevels %>%
+  map(function(x){
+    posthoc.kruskal.nemenyi.test(AlphaDiv ~ Depth, data = x, dist="Chisq")
+  })
+
+
+# Normalized
+
+krakenDiversityLevels <- krakenDiversityDF %>%
+  split(.$Level)
+
+krakenInvSimpsonKruskall <- krakenDiversityLevels %>%
+  map(function(x){
+    kruskal.test(InvSimpson ~ as.factor(Depth), data = x)
+    })
+
+krakenISKruskallTidy <- lapply(krakenInvSimpsonKruskall, function(x){
+  tidy(x)
+})
+
+krakenISKruskallTidy <- do.call("rbind", krakenISKruskallTidy)
+
+write.csv(krakenISKruskallTidy, '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/krakenInvSimpsonKruskalWallis_dos.csv', row.names = TRUE)
+
+krakenShannonKruskall <- krakenDiversityLevels %>%
+  map(function(x){
+    kruskal.test(Shannon ~ as.factor(Depth), data = x)
+  })
+
+krakenShannonKrusnkallTidy <- lapply(krakenShannonKruskall, function(x){
+  tidy(x)
+})
+
+krakenShannonKruskallTidy <- do.call("rbind", krakenShannonKruskallTidy)
+
+write.csv(krakenShannonKruskallTidy, '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/krakenShannonKruskalWallis_dos.csv', row.names = TRUE)
+
+krakenShannonPostHoc <- krakenDiversityLevels %>%
+  map(function(x){
+    posthoc.kruskal.nemenyi.test(Shannon ~ as.factor(Depth), data=x, dist="Chisq")
+  })
