@@ -215,7 +215,6 @@ krakenAnalytical <- lapply(krakenResultsbyDepth, function(x){
   
 amrAnalytical <- lapply(amrAnalytical, function(x){
   amrAnaMat <- matrixAMRanalytical(x)
-  
   return(amrAnaMat)
 })
 
@@ -257,27 +256,71 @@ krakenNorm <- lapply(krakenNorm, function(x){
   krakenCSSdf <- data.frame(MRcounts(x, norm = T))
 })
 
-amrGenes <- row.names(amrAnalyticalMatrix) 
-
 amrAnnotations <- read_tsv('amr_genes.tabular_parsed.tab')
 
-# Tidy normalized datasets ------------------------------------------------
+# amrQuarter <- amrResultsFiltered %>%
+#   filter(Sample_type == "D0.25") %>%
+#   select(Gene) %>%
+#   distinct(Gene)
+# 
+# amrHalf <- amrResultsTidy %>%
+#   filter(Sample_type == "D0.5" & Category == "Gene") %>%
+#   select(CategoryName) %>%
+#   distinct(CategoryName)
+# 
+# amrFull <- amrResultsTidy %>%
+#   filter(Sample_type == "D1" & Category == "Gene") %>%
+#   select(CategoryName) %>%
+#   distinct(CategoryName)
+# 
 
-amrNormTidy <- amrNorm %>% 
-  gather(key = samples, value = normCounts, 1:32) %>%
-  gather(key = category, value = categoryNames, 1:4) %>%
-  mutate(sampleType=str_extract(samples, "^[A-Z]+"))
+names(amrAnnotations) <- c("Gene", "Class", "Mechanism", "Group")
+
+amrNormAnnot <- lapply(amrNorm, function(x){
+  x$Gene <- row.names(x)
+  amrAnnotated <- left_join(amrAnnotations, x, by="Gene") %>% 
+    na.omit()
+  return(amrAnnotated)
+})
+
+
+krakenNormAnnot <- lapply(krakenNorm, function(x){
+  x$TaxID <- row.names(x)
+  krakenAnnotated <- left_join(krakenTaxInfo, x, by="TaxID") %>% 
+    na.omit() %>%
+    select(-matches("Sample", "SampleType"))
+  return(krakenAnnotated)
+})
+
+
+# Tidy normalized, annotated datasets -------------------------------------
+
+amrNormTidy <- lapply(amrNormAnnot, function(x){
+  x %>% 
+    gather(key = samples, value = normCounts, 5:ncol(x)) %>%
+    gather(key = category, value = categoryNames, 1:4)
+})
   
-krakenNorm <- left_join(krakenNorm, krakenTaxInfo, by="TaxID")
-
-krakenNormTidy <- krakenNorm %>%
-  gather(key = samples, value = normCounts, 1:32) %>%
-  mutate(sampleType=str_extract(samples, "^[A-Z]+"))
-
+krakenNormTidy <- lapply(krakenNormAnnot, function(x){
+  x %>% 
+    gather(key = samples, value = normCounts, 8:ncol(x))
+})
+  
 
 # Split, apply, combine: aggregate AMR and Kraken -------------------------
 
-amrNormAgg <- amrNormTidy %>% 
+# Join the data from all depths, then split by AMR category and taxonomy
+
+amrAllDepths <- do.call("rbind", amrNormTidy)
+
+amrAllDepths$SampleType <- str_extract(amrAllDepths$samples, "^[A-Z]+")
+
+krakenAllDepths <- do.call("rbind", krakenNormTidy)
+
+krakenAllDepths$SampleType <- str_extract(krakenAllDepths$samples, "^[A-Z]+")
+
+
+amrNormAgg <- amrAllDepths %>% 
     split(.$category)
   
 amrNormAgg <- lapply(amrNormAgg, function(x){
@@ -286,12 +329,14 @@ amrNormAgg <- lapply(amrNormAgg, function(x){
 })
 
 amrNormDivMat <- lapply(amrNormAgg, function(x){
-  amrNormWide <- spread(x, key=1, value=3)
+  amrNormWide <- spread(x, key=categoryNames, value=normCountsSum, fill=0)
   row.names(amrNormWide) <- amrNormWide$samples
   amrNormWide <- amrNormWide %>%
     select(2:ncol(amrNormWide))
   return(amrNormWide)
 })
+
+# Normalized diversity indices --------------------------------------------
 
 amrDiversity <- lapply(amrNormDivMat, function(x){
   observed_richness <- specnumber(x, MARGIN=1)
@@ -300,30 +345,93 @@ amrDiversity <- lapply(amrNormDivMat, function(x){
   shannon <- diversity(x, index="shannon", MARGIN=1)
   evenness <- shannon/log(observed_richness)
   return(list(observed_richness=observed_richness,
+              invsimpson = invsimpson,
               simpson = simpson,
               shannon = shannon,
               evenness=evenness))
 })
 
-krakenNormAgg <- krakenNormTidy %>% 
-  filter(TaxRank != "-") %>% 
-  split(.$TaxRank)
+amrEstimated <- lapply(amrNormDivMat, function(x){
+  specpool(x, sampleMetadata$SampleType)
+})
+
+amrDiversityDF <- lapply(amrDiversity, function(x) data.frame(
+  ID=names(x$observed_richness), 
+  InvSimpson=as.numeric(x$invsimpson),
+  Simpson = as.numeric(x$simpson),
+  Shannon=as.numeric(x$shannon), 
+  Evenness=as.numeric(x$evenness)
+))
+
+amrDiversityDF <- do.call("rbind", amrDiversityDF)
+
+amrDiversityDF <- amrDiversityDF %>% 
+  mutate(amrLevel=row.names(amrDiversityDF)) %>%
+  mutate(amrLevel=str_extract(amrLevel, "^\\w+"))
+
+amrEstimatedDF <- do.call("rbind", amrEstimated)
+
+amrEstimatedDF <- amrEstimatedDF %>% 
+  mutate(Level=row.names(amrEstimatedDF)) %>% 
+  separate(Level, 
+           into = c("amrLevel", "sampleType"),
+           remove = TRUE)
+
+krakenNormAgg <- krakenAllDepths %>% 
+    split(.$TaxRank)
   
 krakenNormAgg <- lapply(krakenNormAgg, function(x){
-  group_by(x, Name, samples) %>%
+  group_by(x, TaxID, samples) %>%
     summarise(normCountsSum = sum(normCounts))
 })
 
 krakenNormDivMat <- lapply(krakenNormAgg, function(x){
-  krakenNormWide <- x %>%
-    select(Sample, Name, normCounts) %>%
-    spread(key=Name, value=normCounts)
-  row.names(krakenNormWide) <- krakenNormWide$Sample
+  krakenNormWide <- spread(x, key=TaxID, value=normCountsSum, fill=0)
+  row.names(krakenNormWide) <- krakenNormWide$samples
   krakenNormWide <- krakenNormWide %>%
     select(2:ncol(krakenNormWide))
   return(krakenNormWide)
 })
 
+krakenDiversity <- lapply(krakenNormDivMat, function(x){
+  observed_richness <- specnumber(x, MARGIN=1)
+  invsimpson <- diversity(x, index="invsimpson", MARGIN=1)
+  simpson <- diversity(x, index="simpson", MARGIN=1)
+  shannon <- diversity(x, index="shannon", MARGIN=1)
+  evenness <- shannon/log(observed_richness)
+  return(list(observed_richness=observed_richness,
+              invsimpson = invsimpson,
+              simpson = simpson,
+              shannon = shannon,
+              evenness=evenness))
+})
+
+krakenEstimated <- lapply(krakenNormDivMat, function(x){
+  specpool(x, sampleMetadata$SampleType)
+})
+
+
+krakenDiversityDF <- lapply(krakenDiversity, function(x) data.frame(
+  ID=names(x$observed_richness), 
+  InvSimpson=as.numeric(x$invsimpson),
+  Simpson = as.numeric(x$simpson),
+  Shannon=as.numeric(x$shannon), 
+  Evenness=as.numeric(x$evenness)
+))
+
+krakenDiversityDF <- do.call("rbind", krakenDiversityDF)
+
+krakenDiversityDF <- krakenDiversityDF %>% 
+  mutate(krakenLevel=row.names(krakenDiversityDF)) %>%
+  mutate(krakenLevel=str_extract(krakenLevel, "^\\w+"))
+
+krakenEstimatedDF <- do.call("rbind", krakenEstimated)
+
+krakenEstimatedDF <- krakenEstimatedDF %>% 
+  mutate(Level=row.names(krakenEstimatedDF)) %>% 
+  separate(Level, 
+           into = c("krakenLevel", "sampleType"),
+           remove = TRUE)
 
 # Construction of rarefaction curves --------------------------------------
 
