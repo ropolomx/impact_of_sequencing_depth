@@ -366,15 +366,25 @@ amrDiversityDF <- lapply(amrDiversity, function(x) data.frame(
 amrDiversityDF <- do.call("rbind", amrDiversityDF)
 
 amrDiversityDF <- amrDiversityDF %>% 
-  mutate(amrLevel=row.names(amrDiversityDF)) %>%
-  mutate(amrLevel=str_extract(amrLevel, "^\\w+"))
+  mutate(Level=row.names(amrDiversityDF)) %>%
+  mutate(Level=str_extract(Level, "^\\w+")) %>%
+  mutate(Depth=str_extract(ID, "^[A-Z]+")) %>%
+  mutate(Depth=str_replace(Depth,"F", "D1")) %>%
+  mutate(Depth=str_replace(Depth,"H", "D0.5")) %>%
+  mutate(Depth=str_replace(Depth, "Q", "D0.25"))
+
+amrDiversityDF$Level <- factor(amrDiversityDF$Level, 
+                                  levels = c('Class',
+                                             'Mechanism',
+                                             'Group',
+                                             'Gene'))
 
 amrEstimatedDF <- do.call("rbind", amrEstimated)
 
 amrEstimatedDF <- amrEstimatedDF %>% 
   mutate(Level=row.names(amrEstimatedDF)) %>% 
   separate(Level, 
-           into = c("amrLevel", "sampleType"),
+           into = c("Level", "Depth"),
            remove = TRUE)
 
 krakenNormAgg <- krakenAllDepths %>% 
@@ -422,16 +432,84 @@ krakenDiversityDF <- lapply(krakenDiversity, function(x) data.frame(
 krakenDiversityDF <- do.call("rbind", krakenDiversityDF)
 
 krakenDiversityDF <- krakenDiversityDF %>% 
-  mutate(krakenLevel=row.names(krakenDiversityDF)) %>%
-  mutate(krakenLevel=str_extract(krakenLevel, "^\\w+"))
+  mutate(taxLevel=row.names(krakenDiversityDF)) %>%
+  separate(taxLevel, into=c("Level", "sample_number"), sep="\\.") %>%
+  select(-sample_number) %>%
+  filter(!Level %in% c("-", "D")) %>%
+  mutate(Depth = str_extract(ID, "^[A-Z]+"))
+ 
+krakenDiversityDF$Level <- str_replace(krakenDiversityDF$Level, "P", "Phylum")
+krakenDiversityDF$Level <- str_replace(krakenDiversityDF$Level, "C", "Class")
+krakenDiversityDF$Level <- str_replace(krakenDiversityDF$Level, "O", "Order")
+krakenDiversityDF$Level <- str_replace(krakenDiversityDF$Level, "F", "Family")
+krakenDiversityDF$Level <- str_replace(krakenDiversityDF$Level, "G", "Genus")
+krakenDiversityDF$Level <- str_replace(krakenDiversityDF$Level, "S", "Species")
 
+krakenDiversityDF$Depth <- str_replace(krakenDiversityDF$Depth, "F", "D1")
+krakenDiversityDF$Depth <- str_replace(krakenDiversityDF$Depth, "H", "D0.5")
+krakenDiversityDF$Depth <- str_replace(krakenDiversityDF$Depth, "QD", "D0.25")
+
+krakenDiversityDF$Level <- factor(krakenDiversityDF$Level, 
+                                         levels = c('Phylum', 
+                                                    'Class', 
+                                                    'Order', 
+                                                    'Family', 
+                                                    'Genus', 
+                                                    'Species'))
+ 
 krakenEstimatedDF <- do.call("rbind", krakenEstimated)
 
 krakenEstimatedDF <- krakenEstimatedDF %>% 
   mutate(Level=row.names(krakenEstimatedDF)) %>% 
-  separate(Level, 
+  separate(Level,
            into = c("krakenLevel", "sampleType"),
            remove = TRUE)
+
+
+
+# Normalized boxplots -----------------------------------------------------
+
+amrShannonBoxplot <- amrDiversityDF %>%
+    amrShannon()
+
+ggsave(filename = 'amrShannon.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity/',
+       plot = amrShannonBoxplot,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+amrInvSimpsonBoxplot <- amrDiversityDF %>% 
+  amrAlphaDiv()
+
+ggsave(filename = 'amrInvSimpson.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alphaDiversity/',
+       plot = amrInvSimpsonBoxplot,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+
+krakenShannonBoxplot <- krakenDiversityDF %>%
+    krakenShannon()
+
+ggsave(filename = 'krakenShannon.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity',
+       plot = krakenShannonBoxplot,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+krakenInvSimpsonBoxplot <- krakenDiversityDF %>%
+  krakenAlphaDiv()
+
+ggsave(filename = 'krakenInvSimpson.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity',
+       plot = krakenInvSimpsonBoxplot,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
 
 # Construction of rarefaction curves --------------------------------------
 

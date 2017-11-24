@@ -223,10 +223,10 @@ amrRarefactionCurve <- function(amrSubset){
 #' @examples
 
 krakenAlphaDiv <- function(taxSubset){
-  alphaDivBoxPlot<- ggplot(taxSubset, aes(Depth, AlphaDiv, color=Depth)) +
+  alphaDivBoxPlot<- ggplot(taxSubset, aes(Depth, InvSimpson, color=Depth)) +
     geom_boxplot(size=1.25) +
     theme(strip.text.x=element_text(size=35),
-          axis.text.y=element_text(size=40),
+          axis.text.y=element_text(size=38),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
           axis.title.x=element_text(size=42),
           axis.title.y=element_text(size=42),
@@ -250,7 +250,7 @@ krakenAlphaDiv <- function(taxSubset){
 #'
 #' @examples
 amrAlphaDiv <- function(amrSubset){
-  alphaDivBoxPlot<- ggplot(amrSubset, aes(Depth, AlphaDiv, color=Depth)) +
+  alphaDivBoxPlot<- ggplot(amrSubset, aes(Depth, InvSimpson, color=Depth)) +
     geom_boxplot(size=1.25) +
     theme(strip.text.x=element_text(size=35),
           axis.text.y=element_text(size=40),
@@ -394,21 +394,49 @@ krakenEvenness <- function(taxSubset){
 #' @examples
 krakenShannon <- function(taxSubset){
   alphaDivBoxPlot<- ggplot(taxSubset, aes(Depth, Shannon, color=Depth)) +
-    geom_boxplot(size=1) +
-    geom_point() +
-    geom_jitter() +
+    geom_boxplot(size=1.25) + 
     theme(strip.text.x=element_text(size=30),
-          axis.text.y=element_text(size=40),
+          axis.text.y=element_text(size=38),
           axis.text.x=element_text(size=35, angle=90, vjust=0.3),
           axis.title.x=element_text(size=44),
           axis.title.y=element_text(size=44),
           legend.position="none",
           #legend.title=element_text(size=36),
           #legend.text=element_text(size=36, vjust=0.5),
-          plot.title=element_text(size=50, hjust=0.5)) +
+          plot.title=element_text(size=50, hjust=0.5),
+          panel.background = element_rect(fill = "grey90", colour = "grey80")) +
     xlab("Depth") +
-    ylab("Shannon's index of diversity") +
-    ggtitle('Alpha Diversity by Depth for Rarefied data\nShannon Index of Diversity') +
-    scale_color_manual(values=vennPalette) +
+    ylab("Shannon's Index\n") +
+    #ggtitle('Alpha Diversity by Depth for Normalized data\nShannon Index of Diversity') +
+    scale_color_manual(values=rev(cbPalette)) +
+    facet_wrap(~ Level, nrow=2, scales = "free_y")
+}
+
+#' amrShannon: Boxplots of Shannon's Index of diversity calculated for
+#' AMR results
+#'
+#' @param taxSubset A dataset of AMR hits for a given taxon
+#'
+#' @return
+#' @export
+#'
+#' @examples
+amrShannon <- function(taxSubset){
+  alphaDivBoxPlot<- ggplot(taxSubset, aes(Depth, Shannon, color=Depth)) +
+    geom_boxplot(size=1.25) + 
+    theme(strip.text.x=element_text(size=30),
+          axis.text.y=element_text(size=38),
+          axis.text.x=element_text(size=35, angle=90, vjust=0.3),
+          axis.title.x=element_text(size=44),
+          axis.title.y=element_text(size=44),
+          legend.position="none",
+          #legend.title=element_text(size=36),
+          #legend.text=element_text(size=36, vjust=0.5),
+          plot.title=element_text(size=50, hjust=0.5),
+          panel.background = element_rect(fill = "grey90", colour = "grey80")) +
+    xlab("Depth") +
+    ylab("Shannon's Index\n") +
+    #ggtitle('Alpha Diversity by Depth for Normalized data\nShannon Index of Diversity') +
+    scale_color_manual(values=rev(cbPalette)) +
     facet_wrap(~ Level, nrow=2, scales = "free_y")
 }
