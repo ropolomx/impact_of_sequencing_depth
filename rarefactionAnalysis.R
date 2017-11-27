@@ -831,6 +831,33 @@ ggsave(filename = 'krakenAlphaDivCB.png',
        height = 8.50,
        units = "in")
 
+
+krakenRarefiedNewNames <- krakenAlphaRarefaction2DF %>% 
+  mutate(Level=str_replace(Level,"Phyla", "Phylum")) %>%
+  mutate(Level=str_replace(Level,"Classes", "Class")) %>%
+  mutate(Level = str_replace(Level, "Orders", "Order")) %>%
+  mutate(Level=str_replace(Level, "Families", "Family")) %>%
+  mutate(Level=str_replace(Level, "Genera", "Genus")) %>%
+  mutate(Level=str_replace(Level, "Species", "Species"))
+
+krakenRarefiedNewNames$Level <- factor(krakenRarefiedNewNames$Level, 
+                                  levels = c('Phylum', 
+                                             'Class', 
+                                             'Order', 
+                                             'Family', 
+                                             'Genus', 
+                                             'Species'))
+
+krakenAllSpRawBoxPlots <- krakenRarefiedNewNames %>%
+  krakenRawSpeciesRich()
+
+ggsave(filename = 'krakenObservedRichness.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity',
+       plot = krakenAllSpRawBoxPlots,
+       width = 10.50,
+       height = 8.50,
+       units="in")
+
 krakenAllSpRawBoxPlots <- krakenAlphaRarefaction2DF %>%
   krakenRawSpeciesRich()
 
