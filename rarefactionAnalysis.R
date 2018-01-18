@@ -13,7 +13,7 @@ library(ggplot2)
 library(metagenomeSeq)
 library(vegan)
 library(scales)
-library(PMCMR)
+library(PMCMR) # For statistical tests
 
 # Source utility functions ------------------------------------------------
 
@@ -40,31 +40,30 @@ cbPalette <- c("#FFCD48", # Mango from Crayola palette
 # Filtering involved keeping results with gene fraction >= 75% and 
 # removing all those results with genes that require SNP confirmation.
 
-amrResultsFiltered <- read_csv(Sys.glob(file.path(
+amrResultsFiltered <- read_csv(file.path(
   '~',
-  'aafc',
   'amr',
-  'amrplusplus_rarefaction_analysis',
+  '2-4-8_results',
   '2_4_8_study_RZ',
-  'Results_Aug2017',
-  'Parsed_Aug2017',
-  'amrFiltered_75_genefrac.csv'))
-  )
+  'amrResults_Aug2017_75_gene_frac/cov_sampler_parsed',
+  'amrFiltered_75_genefrac.csv')
+)
 
 amrReadstoHitRatio <- read_tsv('~/amr/2-4-8_results/2_4_8_study_RZ/reads_and_hits.tsv')
 
 # Read Kraken concatenated and filtered file (no Eukaryotes, and no PhiX)
 
-krakenResultsFiltered <- read.delim(Sys.glob(file.path(
+krakenResultsFiltered <- read.delim(file.path(
   '~',
-  'aafc',
   'amr',
-  'amrplusplus_rarefaction_analysis',
+  '2-4-8_results',
   '2_4_8_study_RZ',
-  'Results_Aug2017',
-  'krakenConcat.tsv')),
+  'krakenResults_Aug2017',
+  'allKraken_FHQ',
+  'kraken_filtered',
+  'krakenConcat.tsv'),
   stringsAsFactors = FALSE
-  )
+)
 
 # Remove D0.25_seqtk data from filtered data frame
 
@@ -119,11 +118,9 @@ amrResultsList <- amrResultsTidy %>%
   split(.$Category) %>% #splitting dataframe using base R but with purrr's magrittr piping
   set_names(nm=amrCategories)
 
-
 krakenResultsList <- krakenResultsFiltered %>% 
   split(.$TaxRank) %>% 
   set_names(nm=krakenTaxa)
-
 
 # Summarize results(sum) --------------------------------------------------
 
@@ -147,7 +144,6 @@ amrResultsWide <- lapply(amrResultsSummary, function(x){
 krakenResultsWide <- lapply(krakenResultsSummary, function(x){
   widenKraken(x)
 })
-
 
 # Convert wide to matrix --------------------------------------------------
 
@@ -283,7 +279,6 @@ amrNormAnnot <- lapply(amrNorm, function(x){
     na.omit()
   return(amrAnnotated)
 })
-
 
 krakenNormAnnot <- lapply(krakenNorm, function(x){
   x$TaxID <- row.names(x)
@@ -492,7 +487,6 @@ ggsave(filename = 'amrInvSimpson.png',
        height = 8.50,
        units = "in")
 
-
 krakenShannonBoxplot <- krakenDiversityDF %>%
     krakenShannon()
 
@@ -515,6 +509,8 @@ ggsave(filename = 'krakenInvSimpson.png',
 
 
 # Construction of rarefaction curves --------------------------------------
+
+# AMR curves built from the Coverage Sampler results
 
 # This step requires optimization (parallel mapping or compiling, maybe?)
 
@@ -549,7 +545,7 @@ ggsave(filename = 'krakenInvSimpson.png',
 
 amrRarCurve <- mclapply(amrResultsMat, function(x){
   raremax <- min(rowSums(x))
-  rarecurve(x, step=50, sample=raremax)
+  rarecurve(x, step=10000, sample=raremax)
 },mc.cores=10)
 
 krakenRarCurve <- mclapply(krakenResultsMat, function(x){
@@ -635,7 +631,7 @@ amrAlphaRarefactionDF$Level <- factor(amrAlphaRarefactionDF$Level,
                                  levels = c('Class', 'Mechanism', 'Group', 'Gene'))
 
 
-# Attempt to more functional programming
+# Need to apply more functional programming
  
 krakenRarefyDF <- krakenRarefyDF %>% filter(!krakenLevel %in% c("-", "D"))
 
@@ -646,6 +642,14 @@ krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "F", "Fami
 krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "G", "Genera")
 krakenRarefyDF$krakenLevel <- str_replace(krakenRarefyDF$krakenLevel, "S", "Species")
 
+amrRarCurveDF <- amrRarCurveDF %>%
+  mutate(AMRLevel=str_replace(AMRLevel,"Class","Classes")) %>%
+  mutate(AMRLevel=str_replace(AMRLevel,"Mechanism","Mechanisms")) %>%
+  mutate(AMRLevel=str_replace(AMRLevel,"Group","Groups")) %>%
+  mutate(AMRLevel=str_replace(AMRLevel,"Gene","Genes"))
+
+# Split AMR data frame and generate rarefaction curves for each AMR level
+
 amrAllList <- amrRarCurveDF %>% 
   split(.$AMRLevel)
 
@@ -653,6 +657,8 @@ amrAllRarCurves <- amrAllList %>%
   map(function(x){
     amrRarefactionCurve(x)
   })
+
+# Split Kraken data frame and generate rarefaction curves for each taxonomic level
 
 krakenAllRarCurveList <- krakenRarefyDF %>% 
   split(.$krakenLevel)
@@ -710,7 +716,6 @@ amrAlphaRarefaction <- lapply(amrAlphaRarefaction, function(x) data.table(
   Shannon=as.numeric(x$shannon), 
   Evenness=as.numeric(x$evenness)
 ))
-
 
 amrCategories <- levels(amrResultsTidy$Category)
 
@@ -1111,3 +1116,34 @@ krakenShannonPostHoc <- krakenDiversityLevels %>%
   map(function(x){
     posthoc.kruskal.nemenyi.test(Shannon ~ as.factor(Depth), data=x, dist="Chisq")
   })
+
+# AMR Rarefaction Curves (Rarefaction Analyzer) ---------------------------
+
+# This work was done using the percent sampled vs. number of observations 
+
+
+amrRarConcat <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefiedConcat.csv')
+
+amrRarConcatFilter <- amrRarConcat %>%
+  mutate(Depth=str_replace(Depth,"full", "D1")) %>%
+  mutate(Depth=str_replace(Depth,"half[1-2]", "D0.5")) %>%
+  mutate(Depth=str_replace(Depth, "quarter", "D0.25")) %>%
+  filter(Depth != "seqtk") %>%
+  mutate(Level=str_replace(Level,"class","Classes")) %>%
+  mutate(Level=str_replace(Level,"mechanism","Mechanisms")) %>%
+  mutate(Level=str_replace(Level, "group", "Groups")) %>%
+  mutate(Level=str_replace(Level, "gene", "Genes"))
+
+amrRarConcatbyLevel <- amrRarConcatFilter %>%
+  split(.$Level)
+
+amrRarCurvesPercent <- amrRarConcatbyLevel %>%
+  map(function(x){
+    amrRarFigure(x)
+  })
+
+
+# AMR scaled rarefaction curves -------------------------------------------
+
+# Will also use data from rarefaction analyzer, but the difference will be that the percent sampled will be scaled to the number of reads.
+
