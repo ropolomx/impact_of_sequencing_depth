@@ -1147,3 +1147,81 @@ amrRarCurvesPercent <- amrRarConcatbyLevel %>%
 
 # Will also use data from rarefaction analyzer, but the difference will be that the percent sampled will be scaled to the number of reads.
 
+# Mutate Depth colum so that it matches the Sample_type column of the amrReadsto
+# Hit Ratio dataframe
+
+#> unique(amrReadstoHitRatio$Sample_type)
+#[1] "F" "H" "Q"
+
+amrRarConcat <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefiedConcat.csv')
+
+amrRarConcatFilter <- amrRarConcat %>%
+  mutate(Depth=str_replace(Depth,"full", "F")) %>%
+  mutate(Depth=str_replace(Depth,"half[1-2]", "H")) %>%
+  mutate(Depth=str_replace(Depth, "quarter", "Q")) %>%
+  filter(Depth != "seqtk") %>%
+  rename(Sample_type = Depth) %>%
+  mutate(Level=str_replace(Level,"class","Classes")) %>%
+  mutate(Level=str_replace(Level,"mechanism","Mechanisms")) %>%
+  mutate(Level=str_replace(Level, "group", "Groups")) %>%
+  mutate(Level=str_replace(Level, "gene", "Genes"))
+
+# Extract sample ID from the AMR reads dataframe
+
+amrReadstoHitRatio <- amrReadstoHitRatio %>%
+  mutate(SampleID=str_extract(Samples, "^\\w\\d+"))
+
+# Merge (left join) AMR total reads dataframe with the concatenated AMR rarefacti
+# on dataframe of the the sample ID.
+
+amrScaledRar <- left_join(amrReadstoHitRatio, amrRarConcatFilter, by=c("SampleID","Sample_type"))
+
+amrScaledRarCurve <- amrScaledRar %>% 
+  mutate(Sample_type=str_replace(Sample_type,"F", "D1")) %>%
+  mutate(Sample_type=str_replace(Sample_type,"H", "D0.5")) %>%
+  mutate(Sample_type=str_replace(Sample_type, "Q", "D0.25"))
+
+# Scale reads by multiplying the percent sampling by the total number of reads 
+# for each sample
+
+amrScaledRarCurve <- amrScaledRarCurve %>%
+  mutate(PercentSampling=0.01*PercentSampling) %>%
+  mutate(ScaledReads=`Number of reads`*PercentSampling) %>%
+  rename(Depth = Sample_type)
+
+amrScaledbyLevel <- amrScaledRarCurve %>%
+  split(.$Level)
+
+amrRarCurvesLines <- amrScaledbyLevel %>%
+  map(function(x){
+    amrScaledNonSmooth(x)
+})
+
+
+ggsave(filename = 'amrGeneRarefaction.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefaction',
+       plot = amrRarCurvesLines$Genes,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'amrClassRarefaction.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefaction',
+       plot = amrRarCurvesLines$Class,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'amrMechRarefaction.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefaction',
+       plot = amrRarCurvesLines$Mechanisms,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'amrGroupRarefaction.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefaction',
+       plot = amrRarCurvesLines$Groups,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
