@@ -224,7 +224,6 @@ krakenTaxInfo <- krakenResultsFiltered  %>% select(2:ncol(.))
 
 krakenTaxInfo$TaxID <- as.character(krakenTaxInfo$TaxID)
 
-
 amrExp <- lapply(amrAnalytical, function(x){
   amrMR <- newMRexperiment(x[rowSums(x) > 0, ])
   return(amrMR)
@@ -553,6 +552,10 @@ krakenRarCurve <- mclapply(krakenResultsMat, function(x){
   rarecurve(x, step=1000, sample=raremax)
 },mc.cores=10)
 
+krakenRarCurveNoSample <- mclapply(krakenResultsMat, function(x){
+  rarecurve(x, step=1000)
+},mc.cores=10)
+
 # Rename list of rarefied data using the sample names
 # Need to think of a better way to extract the sample names
 
@@ -685,7 +688,6 @@ ggsave('~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/alpha
        width = 10.50,
        height = 8.50,
        units = "in")
-
 
 # Alpha Diversity (rarefied) and Species Richness calculations -------------
 
@@ -1080,7 +1082,6 @@ krakenAlphaPosthoc <- krakenAlphaRarefactionLevels %>%
     posthoc.kruskal.nemenyi.test(AlphaDiv ~ Depth, data = x, dist="Chisq")
   })
 
-
 # Normalized
 
 krakenDiversityLevels <- krakenDiversityDF %>%
@@ -1222,6 +1223,68 @@ ggsave(filename = 'amrMechRarefaction.png',
 ggsave(filename = 'amrGroupRarefaction.png',
        path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefaction',
        plot = amrRarCurvesLines$Groups,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+# Relative abundance plots for review -------------------------------------
+
+amrRelAbund <- read_csv('amrGeneRelAbundance.csv')
+
+amrRelAbund <- tidyr::gather(amrRelAbund, key="Depth", value="Assignments", -Gene)
+
+amrRelAbundPerc <- amrRelAbund %>%
+  group_by(Depth) %>%
+  mutate(Depth_Total=sum(Assignments)) %>%
+  mutate(Rel_Abund=(Assignments/Depth_Total)*100)
+
+amrMissing <- amrRelAbundPerc %>%
+  filter(Depth == "D0.25" & Assignments == 0.0) %>%
+  distinct(Gene)
+
+amrMissingCompare <- amrRelAbundPerc %>%
+  filter(Gene %in% amrMissing$Gene) %>%
+  arrange(Gene)
+
+amrMissingFilter <- amrMissingCompare %>%
+  filter(Depth != "D0.25")
+
+amrAnnotations$Class <- str_replace(amrAnnotations$Class, "betalactams", "Betalactams")
+
+amrAnnotations$Class <- str_replace(amrAnnotations$Class, "Cationic_antimicrobial_peptides", "Cationic antimicrobial peptides")
+
+amrAnnotations$Class <- str_replace(amrAnnotations$Class, "Multi-drug_resistance", "Multi-drug resistance")
+
+amrMissingAnnotated <- left_join(amrMissingFilter, amrAnnotations, by="Gene") %>%
+  arrange(Class)
+
+# Hack to reorder Gene variable by Classes
+
+amrMissingAnnotated$Gene = factor(amrMissingAnnotated$Gene, levels=unique(amrMissingAnnotated$Gene[order(amrMissingAnnotated$Class)]), ordered=TRUE)
+
+newCBScale = dichromat::colorschemes$Categorical.12
+
+amrRelAbundPlot <- ggplot(amrMissingAnnotated, 
+                              aes(x=Gene, y=Rel_Abund,fill=Class)) + 
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=newCBScale) +
+  facet_grid(. ~ Depth) +
+  ylim(0.00,0.04) +
+  xlab("Gene") +
+  ylab("Relative Abundance (%)\n") +
+  theme(axis.text.x = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text.x=element_text(size=21),
+        axis.text.y=element_text(size=24),
+        axis.title.x=element_text(size=24),
+        axis.title.y=element_text(size=24),
+        legend.position="right",
+        legend.title=element_text(size=15),
+        legend.text=element_text(size=12, vjust=0.5))
+  
+ggsave(filename = 'amrMissingGenes.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/reviewer_comments/',
+       plot = amrRelAbundPlot,
        width = 10.50,
        height = 8.50,
        units = "in")

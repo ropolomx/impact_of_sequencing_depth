@@ -454,10 +454,10 @@ amrScaledNonSmooth <- function(amrLevel){
     rarefactionCurve <- ggplot(amrLevel, aes(ScaledReads, Counts, color=Depth)) +
       geom_line(aes(group=Samples), alpha=0.5,size=3) + 
       theme(strip.text.x=element_text(size=35),
-          axis.text.y=element_text(size=40),
-          axis.text.x=element_text(size=35, angle=90, vjust=0.3),
+          axis.text.y=element_text(size=32),
+          axis.text.x=element_text(size=32, angle=90, vjust=0.3),
           axis.title.x=element_text(size=42),
-          axis.title.y=element_text(size=42),
+          axis.title.y=element_text(size=36, vjust = -0.5),
           legend.position="right",
           legend.title=element_text(size=34),
           legend.text=element_text(size=34, vjust=0.5),
