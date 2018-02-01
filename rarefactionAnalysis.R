@@ -49,7 +49,7 @@ amrResultsFiltered <- read_csv(file.path(
   'amrFiltered_75_genefrac.csv')
 )
 
-amrReadstoHitRatio <- read_tsv('~/amr/2-4-8_results/2_4_8_study_RZ/reads_and_hits.tsv')
+amrReadstoHitRatio <- read_tsv('~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/reads_and_hits.tsv')
 
 # Read Kraken concatenated and filtered file (no Eukaryotes, and no PhiX)
 
@@ -1223,6 +1223,91 @@ ggsave(filename = 'amrMechRarefaction.png',
 ggsave(filename = 'amrGroupRarefaction.png',
        path = '~/amr/2-4-8_results/2_4_8_study_RZ/amrResults_Aug2017_75_gene_frac/rarefaction',
        plot = amrRarCurvesLines$Groups,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+
+# Updated AMR rarefaction curves (AAFC annotation) ------------------------
+
+amrRarConcatAAFC <- read_csv('~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC/rarefiedConcat_AAFC.csv')
+
+amrRarConcatAAFCFilter <- amrRarConcatAAFC %>%
+  mutate(Depth=str_replace(Depth,"F", "D1")) %>%
+  mutate(Depth=str_replace(Depth,"H", "D0.5")) %>%
+  mutate(Depth=str_replace(Depth, "Q", "D0.25")) %>%
+  mutate(Level=str_replace(Level,"class","Classes")) %>%
+  mutate(Level=str_replace(Level,"mechanism","Mechanisms")) %>%
+  mutate(Level=str_replace(Level, "group", "Groups")) %>%
+  mutate(Level=str_replace(Level, "gene", "Genes")) %>%
+  rename(Samples = Sample)
+
+# > head(amrReadstoHitRatio)
+# A tibble: 6 x 4
+# Samples Depth `Number of reads` `AMR hits`
+# <chr>   <chr>             <int>      <int>
+# 1 A062    F              96153609     256108
+# 2 A070    F             137157234     335299
+# 3 N003    F              91882251     230886
+# 4 N013    F              87784587     222068
+# 5 S034    F             119514751     315742
+# 6 S040    F              76537181     220583
+
+# Extract sample ID from the AMR reads dataframe
+
+#amrReadstoHitRatio <- amrReadstoHitRatio %>%
+#  mutate(SampleID=str_extract(Samples, "^\\w\\d+"))
+
+# Merge (left join) AMR total reads dataframe with the concatenated AMR rarefacti
+# on dataframe of the the sample ID.
+
+amrReadstoHitRatio <- amrReadstoHitRatio %>%
+  mutate(Depth=str_replace(Depth,"F", "D1")) %>%
+  mutate(Depth=str_replace(Depth,"H", "D0.5")) %>%
+  mutate(Depth=str_replace(Depth, "Q", "D0.25"))
+
+amrScaledAAFCRar <- left_join(amrReadstoHitRatio, amrRarConcatAAFCFilter, by=c("Samples","Depth"))
+
+
+# Scale reads by multiplying the percent sampling by the total number of reads 
+# for each sample
+
+amrAAFCScaledRarCurve <- amrScaledAAFCRar %>%
+  mutate(PercentSampling=0.01*PercentSampling) %>%
+  mutate(ScaledReads=`Number of reads`*PercentSampling)
+
+amrAAFCScaledbyLevel <- amrAAFCScaledRarCurve %>%
+  split(.$Level)
+
+amrAAFCRarCurvesLines <- amrAAFCScaledbyLevel %>%
+  map(function(x){
+    amrScaledNonSmooth(x)
+})
+
+ggsave(filename = 'amrGeneRarefaction.png',
+       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC',
+       plot = amrAAFCRarCurvesLines$Genes,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'amrClassRarefaction.png',
+       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC',
+       plot = amrAAFCRarCurvesLines$Class,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'amrMechRarefaction.png',
+       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC',
+       plot = amrAAFCRarCurvesLines$Mechanisms,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'amrGroupRarefaction.png',
+       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC',
+       plot = amrAAFCRarCurvesLines$Groups,
        width = 10.50,
        height = 8.50,
        units = "in")
