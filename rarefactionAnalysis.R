@@ -1230,7 +1230,7 @@ ggsave(filename = 'amrGroupRarefaction.png',
 
 # Updated AMR rarefaction curves (AAFC annotation) ------------------------
 
-amrRarConcatAAFC <- read_csv('~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC/rarefiedConcat_AAFC.csv')
+amrRarConcatAAFC <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/rarefiedConcat_AAFC.csv')
 
 amrRarConcatAAFCFilter <- amrRarConcatAAFC %>%
   mutate(Depth=str_replace(Depth,"F", "D1")) %>%
@@ -1240,7 +1240,8 @@ amrRarConcatAAFCFilter <- amrRarConcatAAFC %>%
   mutate(Level=str_replace(Level,"mechanism","Mechanisms")) %>%
   mutate(Level=str_replace(Level, "group", "Groups")) %>%
   mutate(Level=str_replace(Level, "gene", "Genes")) %>%
-  rename(Samples = Sample)
+  rename(Samples = SampleID) %>% 
+  rename(SampleID = Sample)
 
 # > head(amrReadstoHitRatio)
 # A tibble: 6 x 4
@@ -1262,11 +1263,12 @@ amrRarConcatAAFCFilter <- amrRarConcatAAFC %>%
 # on dataframe of the the sample ID.
 
 amrReadstoHitRatio <- amrReadstoHitRatio %>%
+  rename(Depth = Sample_type) %>%
   mutate(Depth=str_replace(Depth,"F", "D1")) %>%
   mutate(Depth=str_replace(Depth,"H", "D0.5")) %>%
   mutate(Depth=str_replace(Depth, "Q", "D0.25"))
 
-amrScaledAAFCRar <- left_join(amrReadstoHitRatio, amrRarConcatAAFCFilter, by=c("Samples","Depth"))
+amrScaledAAFCRar <- left_join(amrReadstoHitRatio, amrRarConcatAAFCFilter, by=c("SampleID","Depth"))
 
 
 # Scale reads by multiplying the percent sampling by the total number of reads 
@@ -1285,32 +1287,130 @@ amrAAFCRarCurvesLines <- amrAAFCScaledbyLevel %>%
 })
 
 ggsave(filename = 'amrGeneRarefaction.png',
-       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/',
        plot = amrAAFCRarCurvesLines$Genes,
        width = 10.50,
        height = 8.50,
        units = "in")
 
 ggsave(filename = 'amrClassRarefaction.png',
-       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/',
        plot = amrAAFCRarCurvesLines$Class,
        width = 10.50,
        height = 8.50,
        units = "in")
 
 ggsave(filename = 'amrMechRarefaction.png',
-       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/',
        plot = amrAAFCRarCurvesLines$Mechanisms,
        width = 10.50,
        height = 8.50,
        units = "in")
 
 ggsave(filename = 'amrGroupRarefaction.png',
-       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/AMR_rarefaction_AAFC',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/',
        plot = amrAAFCRarCurvesLines$Groups,
        width = 10.50,
        height = 8.50,
        units = "in")
+
+
+# Rarefaction curves of Kraken rarefaction (Waffles) ----------------------
+
+# Microbiome rarefaction data generated in NML cluster (Waffles)
+
+krakenRarWaffles <- Sys.glob("~/amr/2-4-8_results/2_4_8_study_RZ/Kraken_rarefaction_waffles/RF_*")
+
+krakenRarWafflesFileNames <- str_extract(krakenRarWaffles, "RF_.*$")
+
+rarCategories <- c("Rates", 
+                   "Reads", 
+                   "Domains", 
+                   "Phyla", 
+                   "Classes", 
+                   "Orders", 
+                   "Families", 
+                   "Genera", 
+                   "Species")
+
+krakenRarWafflesAll <- map(krakenRarWaffles, function(x){
+  df <- read.csv(x, header=FALSE)
+  df <- t(df)
+  colnames(df) = rarCategories
+  df <- df[2:nrow(df),]
+  as.data.frame(df)
+}) %>%
+  set_names(nm=krakenRarWafflesFileNames)
+
+krakenRarWafflesDF <- bind_rows(krakenRarWafflesAll, .id = "Sample")
+
+krakenRarWafflesDF$Rates <- as.numeric(as.character(krakenRarWafflesDF$Rates))
+
+krakenRarWafflesDF$Reads <- as.numeric(as.character(krakenRarWafflesDF$Reads))
+
+krakenRarWafflesDF$Domains <- as.numeric(as.character(krakenRarWafflesDF$Domains))
+
+krakenRarWafflesDF$Phyla <- as.numeric(as.character(krakenRarWafflesDF$Phyla))
+
+krakenRarWafflesDF$Classes <- as.numeric(as.character(krakenRarWafflesDF$Classes))
+
+krakenRarWafflesDF$Orders <- as.numeric(as.character(krakenRarWafflesDF$Orders))
+
+krakenRarWafflesDF$Families <- as.numeric(as.character(krakenRarWafflesDF$Families))
+
+krakenRarWafflesDF$Genera <- as.numeric(as.character(krakenRarWafflesDF$Genera))
+
+krakenRarWafflesDF$Species <- as.numeric(as.character(krakenRarWafflesDF$Species))
+
+#krakenRarWafflesDF$Sample <- as.factor(krakenRarWafflesDF$Sample)
+
+krakenRarWafflesTidy <- krakenRarWafflesDF %>%
+  tidyr::gather(key = Level, value = taxonCount, -Sample,-Rates,-Reads)
+
+krakenRarWafflesTidy <- krakenRarWafflesTidy %>%
+  mutate(Depth=Sample) %>%
+  mutate(Depth=str_replace(Depth,"RF_F.*", "D1")) %>%
+  mutate(Depth=str_replace(Depth,"RF_H.*", "D0.5")) %>%
+  mutate(Depth=str_replace(Depth,"RF_Q.*", "D0.25"))
+
+krakenRarWafflesbyTaxon <- krakenRarWafflesTidy %>% 
+  split(.$Level)
+
+krakenRarWafflesCurves <- krakenRarWafflesbyTaxon %>%
+  map(function(x){
+    krakenRarCurveNML(x)
+  })
+
+krakenRarCurvePhyla <- ggplot(krakenPhylaCombined, aes(Reads, taxonCount, color=Depth)) +
+    geom_line(aes(group=Sample), alpha=0.5, size=4) + 
+    #geom_point(aes(group=Sample), size=4) +
+    theme(strip.text.x=element_text(size=35),
+          axis.text.y=element_text(size=40),
+          axis.text.x=element_text(size=35, angle=90, vjust=0.3),
+          axis.title.x=element_text(size=42),
+          axis.title.y=element_text(size=42),
+          legend.position="right",
+          legend.title=element_text(size=34),
+          legend.text=element_text(size=34, vjust=0.5),
+          legend.key.size = unit(2, "lines"),
+          legend.spacing = unit(0.2,"lines"),
+          plot.title=element_text(size=52, hjust=0.5)) +
+    xlab("\nNumber of reads") +
+    ylab(paste('Number ', 'of ', krakenRarWafflesbyTaxon$Phyla$Level, '\n')) +
+    scale_color_manual(values=rev(cbPalette)) +
+    ylim(0,40) +
+    #scale_y_log10() +
+    scale_x_continuous(labels=scientific) 
+  #  scale_y_log10(labels=scientific)
+  #facet_grid(. ~ Depth)
+
+ggsave(filename = 'amrGroupRarefaction.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/',
+       plot = amrAAFCRarCurvesLines$Groups,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
 
 # Relative abundance plots for review -------------------------------------
 

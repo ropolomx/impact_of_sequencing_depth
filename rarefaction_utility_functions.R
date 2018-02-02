@@ -452,7 +452,7 @@ amrShannon <- function(taxSubset){
 #' @examples
 amrScaledNonSmooth <- function(amrLevel){
     rarefactionCurve <- ggplot(amrLevel, aes(ScaledReads, Counts, color=Depth)) +
-      geom_line(aes(group=SampleID), alpha=0.6,size=3) + 
+      geom_line(aes(group=Samples.x), alpha=0.6,size=3) + 
       theme(strip.text.x=element_text(size=35),
           axis.text.y=element_text(size=32),
           axis.text.x=element_text(size=32, angle=90, vjust=0.3),
@@ -468,4 +468,36 @@ amrScaledNonSmooth <- function(amrLevel){
     ylab(paste('Number ', 'of ', amrLevel$Level, '\n')) +
     scale_color_manual(values=rev(cbPalette)) +
       scale_x_continuous(labels=scientific) 
+}
+
+#' Title
+#'
+#' @param taxSubset 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+krakenRarCurveNML <- function(taxSubset){
+    rarefactionCurve <- ggplot(taxSubset, aes(Reads, taxonCount, color=Depth)) +
+      geom_line(aes(group=Sample), alpha=0.5, size=4) + 
+      #geom_point(aes(group=Sample), size=4) +
+      theme(strip.text.x=element_text(size=35),
+          axis.text.y=element_text(size=40),
+          axis.text.x=element_text(size=35, angle=90, vjust=0.3),
+          axis.title.x=element_text(size=42),
+          axis.title.y=element_text(size=42),
+          ylim(0,40),
+          legend.position="right",
+          legend.title=element_text(size=34),
+          legend.text=element_text(size=34, vjust=0.5),
+          legend.key.size = unit(2, "lines"),
+          legend.spacing = unit(0.2,"lines"),
+          plot.title=element_text(size=52, hjust=0.5)) +
+    xlab("\nNumber of reads") +
+    ylab(paste('Number ', 'of ', taxSubset$Level, '\n')) +
+    scale_color_manual(values=rev(cbPalette)) +
+    #scale_y_log10() +
+    scale_x_continuous(labels=scientific)
+    #facet_grid(. ~ Depth)
 }
