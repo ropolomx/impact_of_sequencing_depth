@@ -881,6 +881,17 @@ ggsave(filename = 'krakenSpRichnessCB.png',
 krakenAlphaRarPOGS <- krakenAlphaRarefaction2DF %>%
   filter(Level %in% c("Phyla", "Orders", "Genera", "Species"))
 
+krakenAlphaRarPOGS <- krakenAlphaRarPOGS %>%
+  mutate(taxLevel = Level) %>%
+  mutate(taxLevel = str_replace(taxLevel, "Phyla", "Phylum")) %>%
+  mutate(taxLevel =str_replace(taxLevel,"Orders", "Order")) %>%
+  mutate(taxLevel = str_replace(taxLevel,"Genera", "Genus")) %>%
+  mutate(Level = taxLevel)
+
+
+krakenAlphaRarPOGS$Level <- factor(krakenAlphaRarPOGS$Level, 
+                                 levels = c('Phylum', 'Order', 'Genus', 'Species'))
+  
 krakenPOGSspRawBoxPlots <- krakenAlphaRarPOGS %>%
   krakenRawSpeciesRich()
 
