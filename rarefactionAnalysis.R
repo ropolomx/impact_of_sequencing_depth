@@ -314,7 +314,6 @@ krakenAllDepths <- do.call("rbind", krakenNormTidy)
 
 krakenAllDepths$SampleType <- str_extract(krakenAllDepths$samples, "^[A-Z]+")
 
-
 amrNormAgg <- amrAllDepths %>% 
     split(.$category)
   
@@ -875,6 +874,25 @@ ggsave(filename = 'krakenSpRichnessCB.png',
        height = 8.50,
        units="in")
 
+
+# Kraken boxplots with POGS only
+
+
+krakenAlphaRarPOGS <- krakenAlphaRarefaction2DF %>%
+  filter(Level %in% c("Phyla", "Orders", "Genera", "Species"))
+
+krakenPOGSspRawBoxPlots <- krakenAlphaRarPOGS %>%
+  krakenRawSpeciesRich()
+
+ggsave(filename = 'krakenObservedRichnessPOGS_CB.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/krakenResults_Aug2017/alphaDiversity',
+       plot = krakenPOGSspRawBoxPlots,
+       width = 10.50,
+       height = 8.50,
+       units="in")
+
+
+
 # Correlation plots -------------------------------------------------------
 
 # Should make into a function for the package
@@ -1043,7 +1061,6 @@ amrShannonPostHoc <- amrDiversityLevels %>%
   map(function(x){
     posthoc.kruskal.nemenyi.test(Shannon ~ as.factor(Depth), data=x, dist="Chisq")
   })
-
 
 amrAlphaKruskal <- amrAlphaRarefactionLevels %>%
   map(function(x){
@@ -1230,7 +1247,7 @@ ggsave(filename = 'amrGroupRarefaction.png',
 
 # Updated AMR rarefaction curves (AAFC annotation) ------------------------
 
-amrRarConcatAAFC <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/rarefiedConcat_AAFC.csv')
+amrRarConcatAAFC <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/amrRarefiedConcat_AAFC.csv')
 
 amrRarConcatAAFCFilter <- amrRarConcatAAFC %>%
   mutate(Depth=str_replace(Depth,"F", "D1")) %>%
@@ -1373,6 +1390,8 @@ krakenRarWafflesTidy <- krakenRarWafflesTidy %>%
   mutate(Depth=str_replace(Depth,"RF_H.*", "D0.5")) %>%
   mutate(Depth=str_replace(Depth,"RF_Q.*", "D0.25"))
 
+write.csv(krakenRarWafflesTidy, '~/amr/2-4-8_results/2_4_8_study_RZ/Kraken_rarefaction_waffles/krakenRarefiedConcat.csv', row.names = FALSE, quote = FALSE)
+
 krakenRarWafflesbyTaxon <- krakenRarWafflesTidy %>% 
   split(.$Level)
 
@@ -1380,6 +1399,20 @@ krakenRarWafflesCurves <- krakenRarWafflesbyTaxon %>%
   map(function(x){
     krakenRarCurveNML(x)
   })
+
+# Fix Kraken Phyla rarefaction curve
+
+# Create mini dataframe with zeroes and concatenate with Phyla data
+
+krakenZero <- data.frame(Sample=unique(krakenRarWafflesbyTaxon$Phyla$Sample))
+
+krakenPhylaCombined <- rbind(krakenRarWafflesbyTaxon$Phyla, krakenZero)
+
+# Combine with rest of the data too
+
+krakenRarCombZero <- rbind(krakenRarWafflesTidy, krakenZero)
+
+write.csv(krakenRarCombZero, '~/amr/2-4-8_results/2_4_8_study_RZ/Kraken_rarefaction_waffles/krakenRarefiedwithZeroes.csv', row.names = FALSE, quote = FALSE)
 
 krakenRarCurvePhyla <- ggplot(krakenPhylaCombined, aes(Reads, taxonCount, color=Depth)) +
     geom_line(aes(group=Sample), alpha=0.5, size=4) + 
@@ -1399,18 +1432,35 @@ krakenRarCurvePhyla <- ggplot(krakenPhylaCombined, aes(Reads, taxonCount, color=
     ylab(paste('Number ', 'of ', krakenRarWafflesbyTaxon$Phyla$Level, '\n')) +
     scale_color_manual(values=rev(cbPalette)) +
     ylim(0,40) +
-    #scale_y_log10() +
     scale_x_continuous(labels=scientific) 
-  #  scale_y_log10(labels=scientific)
-  #facet_grid(. ~ Depth)
 
-ggsave(filename = 'amrGroupRarefaction.png',
-       path = '~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/',
-       plot = amrAAFCRarCurvesLines$Groups,
+ggsave(filename = 'krakenPhylaRarefaction.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/Kraken_rarefaction_waffles/',
+       plot = krakenRarCurvePhyla,
        width = 10.50,
        height = 8.50,
        units = "in")
 
+ggsave(filename = 'krakenOrderRarefaction.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/Kraken_rarefaction_waffles/',
+       plot = krakenRarWafflesCurves$Orders,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'krakenGeneraRarefaction.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/Kraken_rarefaction_waffles/',
+       plot = krakenRarWafflesCurves$Genera,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'krakenSpeciesRarefaction.png',
+       path = '~/amr/2-4-8_results/2_4_8_study_RZ/Kraken_rarefaction_waffles/',
+       plot = krakenRarWafflesCurves$Species,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
 
 # Relative abundance plots for review -------------------------------------
 
