@@ -452,7 +452,7 @@ amrShannon <- function(taxSubset){
 #' @examples
 amrScaledNonSmooth <- function(amrLevel){
     rarefactionCurve <- ggplot(amrLevel, aes(ScaledReads, Counts, color=Depth)) +
-      geom_line(aes(group=Samples.x), alpha=0.6,size=3) + 
+      geom_line(aes(group=SampleID), alpha=0.6,size=3) + 
       theme(strip.text.x=element_text(size=35),
           axis.text.y=element_text(size=32),
           axis.text.x=element_text(size=32, angle=90, vjust=0.3),

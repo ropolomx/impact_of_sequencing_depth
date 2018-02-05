@@ -1260,6 +1260,29 @@ ggsave(filename = 'amrGroupRarefaction.png',
 
 amrRarConcatAAFC <- read_csv('~/amr/2-4-8_results/2_4_8_study_RZ/rarefaction_AAFC_annotation/amrRarefiedConcat_AAFC.csv')
 
+# Read concatenated AMR rarefactions perforemd with 10 iterations
+# Path is for Linux Mint machine
+# TODO: need to standardize directories in repository
+
+amrRarConcat10iter <- read_csv('~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/RarefactionAnalyzer-10_iterations/amrRarefiedConcat_10_iterations.csv')
+
+# Pre-process to extract Sample ID, Depth and AMR mechanisms and convert to plurals
+
+amrRarConcat10iter <- amrRarConcat10iter %>%
+  mutate(Depth=Sample) %>%
+  mutate(Depth=str_replace(Depth,"F_.*", "D1")) %>%
+  mutate(Depth=str_replace(Depth,"H_.*", "D0.5")) %>%
+  mutate(Depth=str_replace(Depth, "Q_.*", "D0.25")) %>%
+  mutate(Level = Sample) %>%
+  mutate(Level=str_replace(Level,".*_class","Classes")) %>%
+  mutate(Level=str_replace(Level,".*_mech","Mechanisms")) %>%
+  mutate(Level=str_replace(Level, ".*_group", "Groups")) %>%
+  mutate(Level=str_replace(Level, ".*_gene", "Genes")) %>%
+  mutate(SampleID=Sample) %>%
+  mutate(SampleID=str_replace(SampleID,"^(.?_.*)_rarefied.*$", "\\1")) %>%
+  mutate(Samples=SampleID) %>%
+  mutate(Samples=str_replace(Samples,".*([A-Z]+\\d+)$", "\\1"))
+  
 amrRarConcatAAFCFilter <- amrRarConcatAAFC %>%
   mutate(Depth=str_replace(Depth,"F", "D1")) %>%
   mutate(Depth=str_replace(Depth,"H", "D0.5")) %>%
@@ -1296,8 +1319,13 @@ amrReadstoHitRatio <- amrReadstoHitRatio %>%
   mutate(Depth=str_replace(Depth,"H", "D0.5")) %>%
   mutate(Depth=str_replace(Depth, "Q", "D0.25"))
 
+# TODO check this join
+
 amrScaledAAFCRar <- left_join(amrReadstoHitRatio, amrRarConcatAAFCFilter, by=c("SampleID","Depth"))
 
+# With 10 iteration set in Linux Mint machine
+
+amrScaledAAFCRar10iter <- left_join(amrReadstoHitRatio, amrRarConcat10iter, by=c("Samples","Depth"))
 
 # Scale reads by multiplying the percent sampling by the total number of reads 
 # for each sample
@@ -1306,10 +1334,22 @@ amrAAFCScaledRarCurve <- amrScaledAAFCRar %>%
   mutate(PercentSampling=0.01*PercentSampling) %>%
   mutate(ScaledReads=`Number of reads`*PercentSampling)
 
+amrAAFCScaledRarCurve10iter <- amrScaledAAFCRar10iter %>%
+  mutate(PercentSampling=0.01*PercentSampling) %>%
+  mutate(ScaledReads=`Number of reads`*PercentSampling)
+
 amrAAFCScaledbyLevel <- amrAAFCScaledRarCurve %>%
   split(.$Level)
 
+amrAAFCScaledbyLevel10iter <- amrAAFCScaledRarCurve10iter %>%
+  split(.$Level)
+
 amrAAFCRarCurvesLines <- amrAAFCScaledbyLevel %>%
+  map(function(x){
+    amrScaledNonSmooth(x)
+})
+
+amrAAFCRarCurvesLines10iter <- amrAAFCScaledbyLevel10iter %>%
   map(function(x){
     amrScaledNonSmooth(x)
 })
@@ -1342,6 +1382,35 @@ ggsave(filename = 'amrGroupRarefaction.png',
        height = 8.50,
        units = "in")
 
+# 10 iteration plots
+
+ggsave(filename = 'amrGeneRarefaction_10iter.png',
+       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/RarefactionAnalyzer-10_iterations/',
+       plot = amrAAFCRarCurvesLines10iter$Genes,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'amrClassRarefaction_10iter.png',
+       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/RarefactionAnalyzer-10_iterations/',
+       plot = amrAAFCRarCurvesLines10iter$Class,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'amrMechRarefaction_10iter.png',
+       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/RarefactionAnalyzer-10_iterations/',
+       plot = amrAAFCRarCurvesLines10iter$Mechanisms,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
+
+ggsave(filename = 'amrGroupRarefaction_10iter.png',
+       path = '~/aafc/amr/amrplusplus_rarefaction_analysis/2_4_8_study_RZ/Results_Aug2017/RarefactionAnalyzer-10_iterations/',
+       plot = amrAAFCRarCurvesLines10iter$Groups,
+       width = 10.50,
+       height = 8.50,
+       units = "in")
 
 # Rarefaction curves of Kraken rarefaction (Waffles) ----------------------
 
