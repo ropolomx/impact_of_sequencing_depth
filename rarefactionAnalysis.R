@@ -1,5 +1,7 @@
+# Impact of sequencing depth on the characterization of microbiome and resistome
 # Rarefaction analysis of 2-4-8 study data
 # Analysis of alpha-diversity and species richness
+# Refactoring: enfrocing abstraction and tidyverse style guide
 
 # Load packages -----------------------------------------------------------
 
@@ -8,16 +10,20 @@ library(tidyr)
 library(dplyr)
 library(stringr)
 library(purrr)
-library(foreach)
+library(foreach) # Is there a tidyverse alternative ? Perhaps iwalk?
 library(ggplot2)
 library(metagenomeSeq)
 library(vegan)
 library(scales)
-library(PMCMR) # For statistical tests
+library(PMCMR) # For posthoc statistical tests
+library(here)
 
 # Source utility functions ------------------------------------------------
 
-source('rarefaction_utility_functions.R')
+# Load functions from another file
+# Those functions were used throughout all this analyses
+
+source(here('rarefaction_utility_functions.R'))
 
 
 # Colour palettes ---------------------------------------------------------
@@ -28,7 +34,7 @@ source('rarefaction_utility_functions.R')
 vennPalette <- c("#F8766D", "#00BA38", "#619CFF")
 vennPalette <- rev(vennPalette)
 
-# Colourblind friendly palette
+# Colourblind friendly palette used in the submission
 
 cbPalette <- c("#FFCD48", # Mango from Crayola palette
                dichromat::colorschemes$Categorical.12[8], # Blue from dichromat package
@@ -81,7 +87,7 @@ amrResultsTidy <- amrResultsFiltered %>%
   gather(Level, LevelName, c(1,6:8))
 
 # Change the names of the AMR sequencing depths columns
-# Make this more functional
+# Make this more like functional programming, ideally with purrr
 
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Sample, "\\d+_","")
 amrResultsTidy$Depth <- str_replace(amrResultsTidy$Depth, "\\d$","")
@@ -146,6 +152,9 @@ krakenResultsWide <- lapply(krakenResultsSummary, function(x){
 })
 
 # Convert wide to matrix --------------------------------------------------
+
+# TODO: Perhaps group these lapply statements calling anonymous functions 
+# into larger functions?
 
 amrResultsMat <- lapply(amrResultsWide, function(x){
   matrixAMR(x)
