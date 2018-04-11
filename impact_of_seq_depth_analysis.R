@@ -23,7 +23,7 @@ library(here)
 # Load functions from another file
 # Those functions were used throughout all this analyses
 
-source(here('rarefaction_utility_functions.R'))
+source(here('analysis_utility_functions.R'))
 
 
 # Colour palettes ---------------------------------------------------------
