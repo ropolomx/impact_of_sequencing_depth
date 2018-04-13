@@ -34,7 +34,7 @@ These R and Python scripts were used for processing the output of the AMRPlusPlu
 		}, 
 	language = {en},
 	journal = {Scientific Reports}, 
-	author = {Zaheer, Rahat and Noyes, Noelle and Polo, Rodrigo Ortega and Cook, Shaun R. and Marinier, Eric and Domselaar, Gary Van and Belk, Keith E. and Morley, Paul S. and McAllister, Tim A.},
+	author = {Zaheer, Rahat and Noyes, Noelle and Ortega Polo, Rodrigo and Cook, Shaun R. and Marinier, Eric and Van Domselaar, Gary and Belk, Keith E. and Morley, Paul S. and McAllister, Tim A.},
 	month = apr,
 	year = {2018},
 	pages = {5890}
