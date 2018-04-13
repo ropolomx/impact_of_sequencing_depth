@@ -1,4 +1,4 @@
-# Code for the analysis of the paper Impact of sequencing depth on the characterization of the microbiome and resistome
+# Code for the analysis of the paper "Impact of sequencing depth on the characterization of the microbiome and resistome"
 
 The code in this repository was written and used for analyzing the data in the study by [Zaheer et al. (2018).](https://www.nature.com/articles/s41598-018-24280-8)
 These R and Python scripts were used for processing the output of the AMRPlusPlus-Kraken Galaxy workflows.
@@ -48,10 +48,15 @@ These R and Python scripts were used for processing the output of the AMRPlusPlu
 _tidyverse_ packages:
 
 `readr`
+
 `tidyr`
+
 `dplyr`
+
 `stringr`
+
 `purrr`
+
 `ggplot2`
 
 
