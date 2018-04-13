@@ -7,7 +7,7 @@ The version of the code that was used for the analysis submitted to the journal 
 
 A `refactoring` branch is currently being developed to polish the code and to improve reusability and for making it more maintainable for the future.
 
-## Citation
+## Paper citation
 
 ```bibtex
 
@@ -45,7 +45,7 @@ A `refactoring` branch is currently being developed to polish the code and to im
 }
 ```
 
-## Requirements
+## Software requirements
 
 ### R packages
 
