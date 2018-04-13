@@ -1,6 +1,6 @@
 # Code for the analysis of the paper "Impact of sequencing depth on the characterization of the microbiome and resistome"
 
-The code in this repository was written and used for analyzing the data in the study by [Zaheer et al. (2018).](https://www.nature.com/articles/s41598-018-24280-8)
+The code in this repository was written and used for analyzing the data in the study by [Zaheer et al. (2018). Impact of sequencing depth on the characterization of the microbiome and resistome. _Sci. Rep._ 8:5890](https://www.nature.com/articles/s41598-018-24280-8).
 These R and Python scripts were used for processing the output of the AMRPlusPlus-Kraken Galaxy workflows.
 
 The version of the code that was used for the analysis submitted to the journal can be found in the [releases](https://github.com/ropolomx/impact_of_sequencing_depth/releases) page under the [__v1.0__ tag](https://github.com/ropolomx/impact_of_sequencing_depth/releases/tag/v1.0). 
