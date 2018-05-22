@@ -376,11 +376,14 @@ amrDiversityDF <- amrDiversityDF %>%
   mutate(Depth=str_replace(Depth,"H", "D0.5")) %>%
   mutate(Depth=str_replace(Depth, "Q", "D0.25"))
 
-amrDiversityDF$Level <- factor(amrDiversityDF$Level, 
-                                  levels = c('Class',
-                                             'Mechanism',
-                                             'Group',
-                                             'Gene'))
+amrDiversityDF$Level <- factor(amrDiversityDF$Level,
+  levels = c(
+    "Class",
+    "Mechanism",
+    "Group",
+    "Gene"
+  )
+)
 
 amrEstimatedDF <- do.call("rbind", amrEstimated)
 
